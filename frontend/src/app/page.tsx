@@ -54,6 +54,7 @@ export default function Home() {
   const [academyActive, setAcademyActive] = useState<boolean>(false);
   const [chapterSuccess, setChapterSuccess] = useState<boolean>(false);
   const [positionHistory, setPositionHistory] = useState<string[]>([]);
+  const [academySubTab, setAcademySubTab] = useState<'challenges' | 'strategies'>('challenges');
 
   // Endgame counting rule
   const [countingState, setCountingState] = useState<CountingState>({
@@ -795,35 +796,99 @@ export default function Home() {
                 សាលាបណ្តុះបណ្តាលអុកចត្រង្គ 🎓
               </h2>
               
-              <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                សិក្សាអំពីច្បាប់ និងរបៀបលេងអុកចត្រង្គខ្មែរជំហានម្តងៗ ជាមួយបញ្ហាប្រឈមជាក់ស្តែង។ ចុចលើមេរៀនខាងក្រោមដើម្បីអនុវត្ត!
-              </p>
-
-              <div className="space-y-2 flex-1 overflow-y-auto pr-1">
-                {tutorialChapters.map((chapter, index) => {
-                  const isActive = academyActive && currentChapterIndex === index;
-                  return (
-                    <div 
-                      key={chapter.id} 
-                      onClick={() => startAcademyChapter(index)}
-                      className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                        isActive 
-                          ? 'border-amber-400 bg-amber-400/10' 
-                          : 'border-slate-800 bg-slate-900/40 hover:bg-slate-900/80'
-                      }`}
-                    >
-                      <h3 className="text-xs font-bold text-amber-400 mb-1">{chapter.title}</h3>
-                      <p className="text-[10px] text-slate-400 leading-relaxed font-sans">{chapter.description}</p>
-                      
-                      {isActive && (
-                        <div className="mt-2 text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                          🎯 ស្ថានភាព: កំពុងអនុវត្តប្រកួត
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+              {/* Academy Sub-tabs */}
+              <div className="grid grid-cols-2 gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                <button 
+                  onClick={() => setAcademySubTab('challenges')}
+                  className={`py-1 text-[10px] font-bold rounded-lg transition-all ${
+                    academySubTab === 'challenges' ? 'bg-amber-400 text-slate-950' : 'text-slate-405 hover:text-white'
+                  }`}
+                >
+                  របៀបដើរ (Tutorials)
+                </button>
+                <button 
+                  onClick={() => setAcademySubTab('strategies')}
+                  className={`py-1 text-[10px] font-bold rounded-lg transition-all ${
+                    academySubTab === 'strategies' ? 'bg-amber-400 text-slate-950' : 'text-slate-405 hover:text-white'
+                  }`}
+                >
+                  យុទ្ធសាស្ត្រឈ្នះ (Setups)
+                </button>
               </div>
+
+              {academySubTab === 'challenges' ? (
+                <>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    សិក្សាអំពីច្បាប់ និងរបៀបលេងអុកចត្រង្គខ្មែរជំហានម្តងៗ ជាមួយបញ្ហាប្រឈមជាក់ស្តែង។ ចុចលើមេរៀនខាងក្រោមដើម្បីអនុវត្ត!
+                  </p>
+
+                  <div className="space-y-2 flex-1 overflow-y-auto pr-1">
+                    {tutorialChapters.map((chapter, index) => {
+                      const isActive = academyActive && currentChapterIndex === index;
+                      return (
+                        <div 
+                          key={chapter.id} 
+                          onClick={() => startAcademyChapter(index)}
+                          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                            isActive 
+                              ? 'border-amber-400 bg-amber-400/10' 
+                              : 'border-slate-800 bg-slate-900/40 hover:bg-slate-900/80'
+                          }`}
+                        >
+                          <h3 className="text-xs font-bold text-amber-400 mb-1">{chapter.title}</h3>
+                          <p className="text-[10px] text-slate-400 leading-relaxed font-sans">{chapter.description}</p>
+                          
+                          {isActive && (
+                            <div className="mt-2 text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                              🎯 ស្ថានភាព: កំពុងអនុវត្តប្រកួត
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    យុទ្ធសាស្ត្របើកឆាកអុកចត្រង្គខ្មែរល្បីៗ ដើម្បីគ្រប់គ្រងក្តារអុក និងរៀបចំការវាយលុកយកឈ្នះគូប្រកួត៖
+                  </p>
+
+                  <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+                    {/* Strategy 1: Horns */}
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40">
+                      <h3 className="text-xs font-bold text-amber-400 mb-1">១. ក្បួនស្នែង ឬរបាំងស្នែង (Horn Defense)</h3>
+                      <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
+                        អភិវឌ្ឍសេះទាំងពីរឡើងទៅកាន់ការ៉ូ <strong>c3</strong> និង <strong>f3</strong> ដើម្បីគ្រប់គ្រងក្រឡាកណ្តាលក្តារ និងបង្កើតខែលការពារស្តេចពីការវាយសម្រុក។ នេះជាយុទ្ធសាស្ត្រមានតុល្យភាពបំផុត និងពេញនិយមបំផុត។
+                      </p>
+                    </div>
+
+                    {/* Strategy 2: Sleeping Tiger */}
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40">
+                      <h3 className="text-xs font-bold text-amber-400 mb-1">២. ក្បួនខ្លាដេក ឬខ្លាពួន (Sleeping Tiger)</h3>
+                      <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
+                        អភិវឌ្ឍសេះចំហៀង (សេះម្ខាងឡើងទៅ c3 ឬ f3 និងសេះម្ខាងទៀតអភិវឌ្ឍទៅ e3 ឬ d3)។ វាបង្កើតប្រព័ន្ធការពារមិនស៊ីមេទ្រី ងាយស្រួលឆ្មក់វាយប្រហារ AI ឱ្យបាក់ជំហរ។
+                      </p>
+                    </div>
+
+                    {/* Strategy 3: Flower */}
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40">
+                      <h3 className="text-xs font-bold text-amber-400 mb-1">៣. ក្បួនផ្ការីក (Flower Formation)</h3>
+                      <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
+                        រៀបចំបណ្តាញកូនត្រីជាលក្ខណៈអង្កត់ទ្រូងការពារគ្នាទៅវិញទៅមក។ វាជួយបិទទ្វារមិនឱ្យសេះគូប្រកួតលោតចូលមកជិតស្តេចបានឡើយ និងត្រៀមរុញកូនត្រីឡើងបុណ្យ។
+                      </p>
+                    </div>
+
+                    {/* Strategy 4: Active Rooks */}
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40">
+                      <h3 className="text-xs font-bold text-amber-400 mb-1">៤. ក្បួនទូកចម្បាំង (Active Rook Control)</h3>
+                      <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
+                        បើកផ្លូវឱ្យទូកអភិវឌ្ឍយ៉ាងលឿនតាមជួរឈរចំហ។ ទូកគឺជាកម្លាំងវាយលុកដ៏ខ្លាំងបំផុតក្នុងអុកចត្រង្គ ដូច្នេះការគ្រប់គ្រងផ្លូវបើកទូលាយគឺជាសោរឈ្នះ។
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {academyActive && (
                 <button 
