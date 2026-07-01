@@ -53,6 +53,7 @@ export default function Home() {
   const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
   const [academyActive, setAcademyActive] = useState<boolean>(false);
   const [chapterSuccess, setChapterSuccess] = useState<boolean>(false);
+  const [positionHistory, setPositionHistory] = useState<string[]>([]);
 
   // Endgame counting rule
   const [countingState, setCountingState] = useState<CountingState>({
@@ -153,6 +154,7 @@ export default function Home() {
     setIsCalculatedByEngine(false);
     setAcademyActive(false);
     setChapterSuccess(false);
+    setPositionHistory([]);
     setCountingState({
       isActive: false,
       count: 0,
@@ -171,6 +173,7 @@ export default function Home() {
     setWinner(null);
     setAcademyActive(true);
     setChapterSuccess(false);
+    setPositionHistory([]);
   };
 
   // Run AI Coaching Tip generator
@@ -249,7 +252,10 @@ export default function Home() {
     if (aiDifficulty === 'engine') {
       setIsCalculatedByEngine(true);
       try {
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ouk-chatrang-backend-56450014005.us-central1.run.app';
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 
+          (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+            ? 'http://localhost:8080' 
+            : 'https://ouk-chatrang-backend-56450014005.us-central1.run.app');
         const response = await fetch(`${apiBaseUrl}/api/move`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -363,6 +369,27 @@ export default function Home() {
 
     const nextTurn = turn === 'w' ? 'b' : 'w';
 
+    // Threefold repetition signature check
+    const getBoardSignature = (b: Board, t: PieceColor): string => {
+      let sig = '';
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const p = b[r][c];
+          if (p) sig += `${r}${c}${p.color}${p.type}`;
+        }
+      }
+      return `${sig}-${t}`;
+    };
+
+    const signature = getBoardSignature(activeBoard, nextTurn);
+    const nextPositionHistory = [...positionHistory, signature];
+    setPositionHistory(nextPositionHistory);
+
+    const occurrences = nextPositionHistory.filter(sig => sig === signature).length;
+    if (occurrences >= 3) {
+      setWinner('draw');
+    }
+
     // Piece's Honor Counting
     const nextBoardHasUnpromoted = hasUnpromotedPawns(activeBoard);
     let nextCounting = { ...countingState };
@@ -436,7 +463,7 @@ export default function Home() {
     <div className="min-h-screen bg-radial from-slate-900 via-zinc-950 to-black text-white p-4 md:p-8 flex flex-col items-center">
       {/* Header */}
       <header className="mb-4 text-center select-none">
-        <h1 className="text-3xl md:text-5xl font-extrabold tracking-wider bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent drop-shadow-md">
+        <h1 className="text-3xl md:text-5xl font-bold tracking-wider bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent drop-shadow-md">
           OUK CHATRANG
         </h1>
         <p className="text-xs md:text-sm font-semibold tracking-widest text-amber-500/80 mt-1 uppercase">
