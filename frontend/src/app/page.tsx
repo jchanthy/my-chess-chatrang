@@ -252,10 +252,7 @@ export default function Home() {
     if (aiDifficulty === 'engine') {
       setIsCalculatedByEngine(true);
       try {
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 
-          (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-            ? 'http://localhost:8080' 
-            : 'https://ouk-chatrang-backend-56450014005.us-central1.run.app');
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ouk-chatrang-backend-56450014005.us-central1.run.app';
         const response = await fetch(`${apiBaseUrl}/api/move`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
