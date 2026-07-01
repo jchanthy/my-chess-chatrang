@@ -73,9 +73,9 @@ export default function Home() {
   const tutorialChapters: TutorialChapter[] = [
     {
       id: 0,
-      title: "1. Trey (Pawn) & Captures",
-      description: "Ouk Chatrang pawns (Trey) start on the 3rd rank. They move 1 square straight forward and capture 1 square diagonally forward. There is no double-step on the first move.",
-      instructions: "Move your Trey from e3 to capture the Black Trey on d4.",
+      title: "១. កូនត្រី និងការស៊ីកូនអុក",
+      description: "កូនត្រីក្នុងអុកចត្រង្គចាប់ផ្តើមនៅជួរទី៣។ ពួកវាដើរទៅមុខត្រង់ ១ការ៉ូ និងស៊ីអង្កត់ទ្រូងទៅមុខ ១ការ៉ូ។ ត្រីមិនអាចដើរ២ជំហានក្នុងការដើរលើកដំបូងឡើយ។",
+      instructions: "ផ្លាស់ទីត្រីរបស់អ្នកពី e3 ដើម្បីស៊ីត្រីខ្មៅនៅលើ d4។",
       setup: () => {
         const b: Board = Array(8).fill(null).map(() => Array(8).fill(null));
         b[5][4] = { type: 'trey', color: 'w', hasMoved: false }; // e3 (row 5, col 4)
@@ -90,9 +90,9 @@ export default function Home() {
     },
     {
       id: 1,
-      title: "2. Koul (Bishop) Movement",
-      description: "The Koul (Bishop) moves 1 square diagonally in any direction, OR 1 square straight forward. This gives it 5 legal move directions, helping it push through pawn structures.",
-      instructions: "Use your Koul on d4 to capture the Black pawn straight ahead on d5.",
+      title: "២. របៀបដើររបស់ គោល",
+      description: "គោល (Bishop) អាចដើរអង្កត់ទ្រូង ១ការ៉ូ ក្នុងទិសដៅទាំង៤ ឬដើរទៅមុខត្រង់ ១ការ៉ូ។ នេះធ្វើឱ្យវាមានទិសដៅដើរស្របច្បាប់ចំនួន ៥ ដែលជួយឱ្យវាទម្លុះទម្រង់កូនត្រីការពាររបស់គូប្រកួត។",
+      instructions: "ប្រើគោលរបស់អ្នកនៅលើ d4 ដើម្បីស៊ីត្រីខ្មៅដែលនៅពីមុខត្រង់នៅលើ d5។",
       setup: () => {
         const b: Board = Array(8).fill(null).map(() => Array(8).fill(null));
         b[4][3] = { type: 'koul', color: 'w', hasMoved: false }; // d4
@@ -107,9 +107,9 @@ export default function Home() {
     },
     {
       id: 2,
-      title: "3. Special Jumps (King & Queen)",
-      description: "On its very first move, the Queen (Neang) can jump 2 squares straight forward. The King (Sdaach) can jump like a Knight on its first move (if not in check). These jumps cannot capture.",
-      instructions: "Jump your King (Sdaach) on e1 like a Knight to the f3 square.",
+      title: "៣. ការលោតពិសេស (ស្តេច និងនាង)",
+      description: "ក្នុងការដើរលើកដំបូងបង្អស់ នាង (Queen) អាចលោតទៅមុខត្រង់ ២ការ៉ូ។ ចំណែកឯស្តេច (King) អាចលោតដូចសេះ (ក្នុងការដើរលើកដំបូង) ប្រសិនបើមិនទាន់រងការអុក (Check)។ ការលោតទាំងនេះមិនអាចស៊ីកូនអុកផ្សេងបានទេ។",
+      instructions: "លោតស្តេចរបស់អ្នកនៅលើ e1 ដូចជាសេះ ទៅកាន់ការ៉ូ f3។",
       setup: () => {
         const b: Board = Array(8).fill(null).map(() => Array(8).fill(null));
         b[7][4] = { type: 'sdaach', color: 'w', hasMoved: false }; // e1
@@ -122,9 +122,9 @@ export default function Home() {
     },
     {
       id: 3,
-      title: "4. Trey Promotion (Trey Kaet)",
-      description: "In Ouk Chatrang, pawns promote to Queen (Neang) immediately when they reach the opponent's starting pawn line. For White, this is the 6th rank (row index 2).",
-      instructions: "Advance your Trey from e5 (row 3) to e6 (row 2) to promote it into a Neang.",
+      title: "៤. ការឡើងបុណ្យត្រី (ត្រីកើត)",
+      description: "ក្នុងអុកចត្រង្គ កូនត្រីនឹងឡើងបុណ្យទៅជានាង (ត្រីកើត) ភ្លាមៗនៅពេលពួកវាដើរទៅដល់ខ្សែត្រីចាប់ផ្តើមរបស់គូប្រកួត។ សម្រាប់ខាងស គឺនៅជួរទី៦ (Row index 2)។",
+      instructions: "រុញត្រីរបស់អ្នកពី e5 ទៅ e6 ដើម្បីឡើងបុណ្យវាទៅជា ត្រីកើត។",
       setup: () => {
         const b: Board = Array(8).fill(null).map(() => Array(8).fill(null));
         b[3][4] = { type: 'trey', color: 'w', hasMoved: true }; // e5 (row 3)
@@ -199,7 +199,7 @@ export default function Home() {
     const search = minimax(currentBoard, 3, -Infinity, Infinity, true, currentHistory);
     const bestMove = search.move;
     if (!bestMove) {
-      return { tip: "No moves available. Checkmate or Stalemate!", suggestion: null };
+      return { tip: "មិនមានកូនអុកអាចដើរបានទេ (អុកងាប់ ឬស្មើ)!", suggestion: null };
     }
 
     const piece = currentBoard[bestMove.from.row][bestMove.from.col];
@@ -207,27 +207,38 @@ export default function Home() {
     const fromName = toAlgebraic(bestMove.from);
     const toName = toAlgebraic(bestMove.to);
 
-    if (!piece) return { tip: "Analyze the board to find your next development.", suggestion: null };
+    if (!piece) return { tip: "វិភាគក្តារអុកដើម្បីស្វែងរកទិសដៅដើរបន្ទាប់។", suggestion: null };
 
-    const pName = piece.type.replace('_', ' ').toUpperCase();
-    let explanation = `Move your ${pName} from ${fromName} to ${toName}. `;
+    const pieceNamesKhmer: Record<string, string> = {
+      sdaach: 'ស្តេច',
+      neang: 'នាង',
+      koul: 'គោល',
+      sesh: 'សេះ',
+      touk: 'ទូក',
+      trey: 'ត្រី',
+      trey_kaet: 'ត្រីកើត'
+    };
+
+    const pName = pieceNamesKhmer[piece.type] || piece.type;
+    let explanation = `ដើរ ${pName} របស់អ្នកពី ${fromName} ទៅ ${toName}។ `;
 
     if (target) {
-      explanation = `⚔️ **Capture:** Take the Black ${target.type.toUpperCase()} at **${toName}** using your ${pName} from ${fromName}. This wins material and weakens the AI's defenses!`;
+      const targetName = pieceNamesKhmer[target.type] || target.type;
+      explanation = `⚔️ **ឱកាសស៊ីកូនអុក:** ស៊ី ${targetName} ពណ៌ខ្មៅនៅត្រង់ការ៉ូ **${toName}** ដោយប្រើ ${pName} របស់អ្នកពី ${fromName} ដើម្បីយកចំណេញកម្លាំងវាយប្រហារ!`;
     } else if (piece.type === 'trey' && bestMove.to.row === 2) {
-      explanation = `⭐ **Pawn Promotion:** Advance your pawn to **${toName}**! Promoting it into a Neang (Queen) gives you highly flexible diagonal attacking power.`;
+      explanation = `⭐ **ការឡើងបុណ្យត្រី:** រុញកូនត្រីទៅកាន់ការ៉ូ **${toName}**! ការឡើងបុណ្យវាទៅជានាង (ត្រីកើត) នឹងបង្កើនឥទ្ធិពលវាយប្រហារតាមអង្កត់ទ្រូងយ៉ាងខ្លាំង។`;
     } else if (piece.type === 'sdaach' && !piece.hasMoved && Math.abs(bestMove.to.row - bestMove.from.row) > 1) {
-      explanation = `👑 **King's First-Turn Jump:** Make a Knight-like jump with your King to **${toName}** to safely tuck him away and develop your defensive lines.`;
+      explanation = `👑 **ការលោតពិសេសរបស់ស្តេច:** លោតស្តេចរបស់អ្នកដូចសេះទៅកាន់ **${toName}** ដើម្បីគេចចេញពីការគំរាមកំហែង និងអភិវឌ្ឍប្រព័ន្ធការពារឱ្យបានលឿន។`;
     } else if (piece.type === 'neang' && !piece.hasMoved && Math.abs(bestMove.to.row - bestMove.from.row) === 2) {
-      explanation = `👸 **Queen's First-Turn Jump:** Jump your Queen 2 squares forward to **${toName}** to command the board center early.`;
+      explanation = `👸 **ការលោតពិសេសរបស់នាង:** លោតនាងទៅមុខ ២ការ៉ូទៅកាន់ **${toName}** ដើម្បីគ្រប់គ្រងកណ្តាលក្តារតាំងពីដំបូងទី។`;
     } else if (piece.type === 'sdaach' && isKingInCheck(currentBoard, 'w')) {
-      explanation = `⚠️ **Defend King:** Your King is in check! Secure your defense immediately by escaping to **${toName}**.`;
+      explanation = `⚠️ **ការពារស្តេច:** ស្តេចរបស់អ្នកកំពុងរងការអុក! គេចទៅកាន់ **${toName}** ជាបន្ទាន់ដើម្បីការពារសុវត្ថិភាព។`;
     } else {
       const centerSquares = ['d4', 'd5', 'e4', 'e5', 'd3', 'e3', 'd6', 'e6'];
       if (centerSquares.includes(toName)) {
-        explanation = `🛡️ **Center Control:** Position your ${pName} on **${toName}** to dominate the center files. Center control makes it harder for the AI to coordinate attacks.`;
+        explanation = `🛡️ **គ្រប់គ្រងកណ្តាលក្តារ:** ដាក់ ${pName} របស់អ្នកនៅលើ **${toName}** ដើម្បីគ្រប់គ្រងផ្ទៃកណ្តាលក្តារ ដែលធ្វើឱ្យគូប្រកួតពិបាករៀបចំការវាយប្រហារ។`;
       } else {
-        explanation = `♟️ **Development:** Relocate your ${pName} to **${toName}** to improve piece coordination and prepare for a future offensive strike.`;
+        explanation = `♟️ **ការអភិវឌ្ឍកូនអុក:** បង្កើនសកម្មភាព ${pName} របស់អ្នកទៅកាន់ **${toName}** ដើម្បីសហការកម្លាំង និងត្រៀមលក្ខណៈវាយសម្រុក។`;
       }
     }
 
@@ -475,7 +486,7 @@ export default function Home() {
 
             {chapterSuccess && (
               <div className="mt-4 p-4 rounded-xl text-center font-bold text-lg border border-emerald-500 bg-emerald-950/80 text-emerald-400 animate-bounce">
-                🎉 Challenge Complete!
+                🎉 បេសកកម្មបានសម្រេច!
                 <button 
                   onClick={() => {
                     if (currentChapterIndex < tutorialChapters.length - 1) {
@@ -487,14 +498,14 @@ export default function Home() {
                   }}
                   className="w-full mt-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold py-2 rounded-lg transition-all"
                 >
-                  {currentChapterIndex < tutorialChapters.length - 1 ? 'Next Chapter ➔' : 'Back to Academy'}
+                  {currentChapterIndex < tutorialChapters.length - 1 ? 'មេរៀនបន្ទាប់ ➔' : 'ត្រឡប់ទៅសាលាបណ្តុះបណ្តាល'}
                 </button>
               </div>
             )}
 
             {isCalculatedByEngine && (
               <div className="mt-2 text-xs text-amber-300 animate-pulse text-center">
-                🤖 Fairy-Stockfish is calculating best move...
+                🤖 Fairy-Stockfish កំពុងគណនាជំហានដើរ...
               </div>
             )}
           </div>
@@ -504,7 +515,7 @@ export default function Home() {
             <div className="bg-slate-950/80 border border-slate-850 rounded-2xl p-5 shadow-2xl backdrop-blur-md">
               <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
                 <h2 className="text-sm font-bold text-amber-400 flex items-center gap-1.5">
-                  🔮 AI Strategy Coach
+                  🔮 គ្រូបង្វឹកយុទ្ធសាស្ត្រ AI
                 </h2>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input 
@@ -522,15 +533,15 @@ export default function Home() {
                   <div className="space-y-2">
                     <p className="text-xs text-slate-300 leading-relaxed font-sans" dangerouslySetInnerHTML={{ __html: coachTip }}></p>
                     <p className="text-[10px] text-amber-400/70 italic mt-2">
-                      💡 Suggested move coordinates are outlined in gold on the board!
+                      💡 កូអរដោនេជំហានដើរណែនាំ ត្រូវបានបង្ហាញដោយបន្ទាត់ពណ៌មាសនៅលើក្តារ!
                     </p>
                   </div>
                 ) : (
-                  <p className="text-slate-500 text-xs italic">Evaluating strategy on your turn...</p>
+                  <p className="text-slate-500 text-xs italic">កំពុងវិភាគយុទ្ធសាស្ត្រសម្រាប់វេនរបស់អ្នក...</p>
                 )
               ) : (
                 <p className="text-slate-500 text-xs">
-                  Turn on Strategy Coach to receive live board suggestions and tactical advice detailing how to win.
+                  បើកគ្រូបង្វឹកយុទ្ធសាស្ត្រ ដើម្បីទទួលបានការណែនាំពីរបៀបដើរ និងយុទ្ធសាស្ត្រលម្អិតដើម្បីយកឈ្នះគូប្រកួត។
                 </p>
               )}
             </div>
@@ -757,11 +768,11 @@ export default function Home() {
           {activeTab === 'academy' && (
             <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-5 shadow-2xl flex flex-col backdrop-blur-md space-y-4">
               <h2 className="text-lg font-bold text-amber-400 border-b border-amber-500/20 pb-2">
-                Ouk Chatrang Academy 🎓
+                សាលាបណ្តុះបណ្តាលអុកចត្រង្គ 🎓
               </h2>
               
               <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                Learn Ouk Chatrang rules step-by-step with guided interactive challenges. Click a chapter below to practice!
+                សិក្សាអំពីច្បាប់ និងរបៀបលេងអុកចត្រង្គខ្មែរជំហានម្តងៗ ជាមួយបញ្ហាប្រឈមជាក់ស្តែង។ ចុចលើមេរៀនខាងក្រោមដើម្បីអនុវត្ត!
               </p>
 
               <div className="space-y-2 flex-1 overflow-y-auto pr-1">
@@ -782,7 +793,7 @@ export default function Home() {
                       
                       {isActive && (
                         <div className="mt-2 text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                          🎯 Status: Active Challenge
+                          🎯 ស្ថានភាព: កំពុងអនុវត្តប្រកួត
                         </div>
                       )}
                     </div>
@@ -795,7 +806,7 @@ export default function Home() {
                   onClick={resetGame}
                   className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2 rounded-xl text-xs transition-all"
                 >
-                  Exit Tutorial Mode
+                  ចាកចេញពីរបៀបសិក្សា
                 </button>
               )}
             </div>
