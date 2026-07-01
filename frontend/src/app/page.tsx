@@ -16,9 +16,19 @@ import {
   Move,
   CountingState,
   PieceColor,
-  Piece
+  Piece,
+  PieceType
 } from '../rules/chessRules';
 import { PieceIcon } from '../components/PieceIcon';
+
+interface TutorialChapter {
+  id: number;
+  title: string;
+  description: string;
+  instructions: string;
+  setup: () => Board;
+  checkComplete: (board: Board, move: Move) => boolean;
+}
 
 export default function Home() {
   const [board, setBoard] = useState<Board>([]);
@@ -28,10 +38,21 @@ export default function Home() {
   const [history, setHistory] = useState<Move[]>([]);
   const [winner, setWinner] = useState<PieceColor | 'draw' | null>(null);
   
-  // Game modes
+  // Game modes & Coach
   const [vsAI, setVsAI] = useState<boolean>(true);
   const [aiDifficulty, setAiDifficulty] = useState<'easy' | 'engine'>('easy');
   const [isCalculatedByEngine, setIsCalculatedByEngine] = useState<boolean>(false);
+  const [coachEnabled, setCoachEnabled] = useState<boolean>(false);
+  const [coachSuggestion, setCoachSuggestion] = useState<{ from: Position; to: Position } | null>(null);
+  const [coachTip, setCoachTip] = useState<string>('');
+
+  // Tab systems
+  const [activeTab, setActiveTab] = useState<'play' | 'academy'>('play');
+
+  // Tutorial Academy State
+  const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
+  const [academyActive, setAcademyActive] = useState<boolean>(false);
+  const [chapterSuccess, setChapterSuccess] = useState<boolean>(false);
 
   // Endgame counting rule
   const [countingState, setCountingState] = useState<CountingState>({
@@ -41,12 +62,81 @@ export default function Home() {
     reason: ''
   });
 
-  // Sound effect / Haptic placeholders (Vibration API)
+  // Vibration API
   const triggerHaptic = () => {
     if (typeof window !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(20);
     }
   };
+
+  // Setup challenge boards
+  const tutorialChapters: TutorialChapter[] = [
+    {
+      id: 0,
+      title: "1. Trey (Pawn) & Captures",
+      description: "Ouk Chatrang pawns (Trey) start on the 3rd rank. They move 1 square straight forward and capture 1 square diagonally forward. There is no double-step on the first move.",
+      instructions: "Move your Trey from e3 to capture the Black Trey on d4.",
+      setup: () => {
+        const b: Board = Array(8).fill(null).map(() => Array(8).fill(null));
+        b[5][4] = { type: 'trey', color: 'w', hasMoved: false }; // e3 (row 5, col 4)
+        b[4][3] = { type: 'trey', color: 'b', hasMoved: false }; // d4 (row 4, col 3)
+        b[7][4] = { type: 'sdaach', color: 'w', hasMoved: false };
+        b[0][4] = { type: 'sdaach', color: 'b', hasMoved: false };
+        return b;
+      },
+      checkComplete: (currentBoard, move) => {
+        return move.to.row === 4 && move.to.col === 3 && move.captured?.type === 'trey';
+      }
+    },
+    {
+      id: 1,
+      title: "2. Koul (Bishop) Movement",
+      description: "The Koul (Bishop) moves 1 square diagonally in any direction, OR 1 square straight forward. This gives it 5 legal move directions, helping it push through pawn structures.",
+      instructions: "Use your Koul on d4 to capture the Black pawn straight ahead on d5.",
+      setup: () => {
+        const b: Board = Array(8).fill(null).map(() => Array(8).fill(null));
+        b[4][3] = { type: 'koul', color: 'w', hasMoved: false }; // d4
+        b[3][3] = { type: 'trey', color: 'b', hasMoved: false }; // d5
+        b[7][4] = { type: 'sdaach', color: 'w', hasMoved: false };
+        b[0][4] = { type: 'sdaach', color: 'b', hasMoved: false };
+        return b;
+      },
+      checkComplete: (currentBoard, move) => {
+        return move.to.row === 3 && move.to.col === 3 && move.captured?.type === 'trey';
+      }
+    },
+    {
+      id: 2,
+      title: "3. Special Jumps (King & Queen)",
+      description: "On its very first move, the Queen (Neang) can jump 2 squares straight forward. The King (Sdaach) can jump like a Knight on its first move (if not in check). These jumps cannot capture.",
+      instructions: "Jump your King (Sdaach) on e1 like a Knight to the f3 square.",
+      setup: () => {
+        const b: Board = Array(8).fill(null).map(() => Array(8).fill(null));
+        b[7][4] = { type: 'sdaach', color: 'w', hasMoved: false }; // e1
+        b[0][4] = { type: 'sdaach', color: 'b', hasMoved: false };
+        return b;
+      },
+      checkComplete: (currentBoard, move) => {
+        return move.to.row === 5 && move.to.col === 5; // f3 (row 5, col 5)
+      }
+    },
+    {
+      id: 3,
+      title: "4. Trey Promotion (Trey Kaet)",
+      description: "In Ouk Chatrang, pawns promote to Queen (Neang) immediately when they reach the opponent's starting pawn line. For White, this is the 6th rank (row index 2).",
+      instructions: "Advance your Trey from e5 (row 3) to e6 (row 2) to promote it into a Neang.",
+      setup: () => {
+        const b: Board = Array(8).fill(null).map(() => Array(8).fill(null));
+        b[3][4] = { type: 'trey', color: 'w', hasMoved: true }; // e5 (row 3)
+        b[7][4] = { type: 'sdaach', color: 'w', hasMoved: false };
+        b[0][4] = { type: 'sdaach', color: 'b', hasMoved: false };
+        return b;
+      },
+      checkComplete: (currentBoard, move) => {
+        return move.to.row === 2 && move.to.col === 4 && currentBoard[2][4]?.type === 'trey_kaet';
+      }
+    }
+  ];
 
   // Initialize board
   useEffect(() => {
@@ -61,6 +151,8 @@ export default function Home() {
     setHistory([]);
     setWinner(null);
     setIsCalculatedByEngine(false);
+    setAcademyActive(false);
+    setChapterSuccess(false);
     setCountingState({
       isActive: false,
       count: 0,
@@ -69,31 +161,88 @@ export default function Home() {
     });
   };
 
+  const startAcademyChapter = (index: number) => {
+    setCurrentChapterIndex(index);
+    setBoard(tutorialChapters[index].setup());
+    setTurn('w');
+    setSelectedPos(null);
+    setLegalMoves([]);
+    setHistory([]);
+    setWinner(null);
+    setAcademyActive(true);
+    setChapterSuccess(false);
+  };
+
+  // Run AI Coaching Tip generator
+  useEffect(() => {
+    if (coachEnabled && turn === 'w' && !winner && board.length > 0 && !academyActive) {
+      const { tip, suggestion } = getCoachTip(board, history);
+      setCoachTip(tip);
+      setCoachSuggestion(suggestion);
+    } else {
+      setCoachTip('');
+      setCoachSuggestion(null);
+    }
+  }, [board, turn, coachEnabled, winner, academyActive]);
+
   // AI Move triggers
   useEffect(() => {
-    if (vsAI && turn === 'b' && !winner) {
+    if (vsAI && turn === 'b' && !winner && !academyActive) {
       const timer = setTimeout(() => {
         makeAIMove();
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [turn, vsAI, winner]);
+  }, [turn, vsAI, winner, academyActive]);
+
+  const getCoachTip = (currentBoard: Board, currentHistory: Move[]): { tip: string; suggestion: { from: Position; to: Position } | null } => {
+    const search = minimax(currentBoard, 3, -Infinity, Infinity, true, currentHistory);
+    const bestMove = search.move;
+    if (!bestMove) {
+      return { tip: "No moves available. Checkmate or Stalemate!", suggestion: null };
+    }
+
+    const piece = currentBoard[bestMove.from.row][bestMove.from.col];
+    const target = currentBoard[bestMove.to.row][bestMove.to.col];
+    const fromName = toAlgebraic(bestMove.from);
+    const toName = toAlgebraic(bestMove.to);
+
+    if (!piece) return { tip: "Analyze the board to find your next development.", suggestion: null };
+
+    const pName = piece.type.replace('_', ' ').toUpperCase();
+    let explanation = `Move your ${pName} from ${fromName} to ${toName}. `;
+
+    if (target) {
+      explanation = `⚔️ **Capture:** Take the Black ${target.type.toUpperCase()} at **${toName}** using your ${pName} from ${fromName}. This wins material and weakens the AI's defenses!`;
+    } else if (piece.type === 'trey' && bestMove.to.row === 2) {
+      explanation = `⭐ **Pawn Promotion:** Advance your pawn to **${toName}**! Promoting it into a Neang (Queen) gives you highly flexible diagonal attacking power.`;
+    } else if (piece.type === 'sdaach' && !piece.hasMoved && Math.abs(bestMove.to.row - bestMove.from.row) > 1) {
+      explanation = `👑 **King's First-Turn Jump:** Make a Knight-like jump with your King to **${toName}** to safely tuck him away and develop your defensive lines.`;
+    } else if (piece.type === 'neang' && !piece.hasMoved && Math.abs(bestMove.to.row - bestMove.from.row) === 2) {
+      explanation = `👸 **Queen's First-Turn Jump:** Jump your Queen 2 squares forward to **${toName}** to command the board center early.`;
+    } else if (piece.type === 'sdaach' && isKingInCheck(currentBoard, 'w')) {
+      explanation = `⚠️ **Defend King:** Your King is in check! Secure your defense immediately by escaping to **${toName}**.`;
+    } else {
+      const centerSquares = ['d4', 'd5', 'e4', 'e5', 'd3', 'e3', 'd6', 'e6'];
+      if (centerSquares.includes(toName)) {
+        explanation = `🛡️ **Center Control:** Position your ${pName} on **${toName}** to dominate the center files. Center control makes it harder for the AI to coordinate attacks.`;
+      } else {
+        explanation = `♟️ **Development:** Relocate your ${pName} to **${toName}** to improve piece coordination and prepare for a future offensive strike.`;
+      }
+    }
+
+    return { tip: explanation, suggestion: bestMove };
+  };
 
   const makeAIMove = async () => {
-    // 1. Fetch from Fairy-Stockfish engine if selected
     if (aiDifficulty === 'engine') {
       setIsCalculatedByEngine(true);
       try {
-        // Send state to API backend
         const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ouk-chatrang-backend-56450014005.us-central1.run.app';
         const response = await fetch(`${apiBaseUrl}/api/move`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            board,
-            turn,
-            history
-          })
+          body: JSON.stringify({ board, turn, history })
         });
         if (response.ok) {
           const data = await response.json();
@@ -109,12 +258,11 @@ export default function Home() {
       setIsCalculatedByEngine(false);
     }
 
-    // 2. Local AI Engine (3-ply Minimax Search with Alpha-Beta pruning)
+    // Minimax search with Alpha-Beta pruning for AI opponent
     const result = minimax(board, 3, -Infinity, Infinity, false, history);
     if (result.move) {
       executeMove(result.move.from, result.move.to);
     } else {
-      // Checkmate or Stalemate
       if (isKingInCheck(board, 'b')) {
         setWinner('w');
       } else {
@@ -124,24 +272,21 @@ export default function Home() {
   };
 
   const handleSquareClick = (row: number, col: number) => {
-    if (winner || (vsAI && turn === 'b')) return;
+    if (winner || (vsAI && turn === 'b' && !academyActive) || chapterSuccess) return;
 
     const clickedPiece = board[row][col];
 
     if (selectedPos) {
-      // Try to execute a move
       const isLegal = legalMoves.some(m => m.row === row && m.col === col);
       if (isLegal) {
         executeMove(selectedPos, { row, col });
         setSelectedPos(null);
         setLegalMoves([]);
       } else if (clickedPiece && clickedPiece.color === turn) {
-        // Change selection
         setSelectedPos({ row, col });
         setLegalMoves(getLegalMoves(board, { row, col }, history));
         triggerHaptic();
       } else {
-        // Deselect
         setSelectedPos(null);
         setLegalMoves([]);
       }
@@ -159,19 +304,18 @@ export default function Home() {
 
     const targetPiece = activeBoard[to.row][to.col];
 
-    // Check special promotions (Trey becomes Queen-like Trey Kaet at 6th rank for white, 3rd rank for black)
+    // Check promotions (Trey Kaet at row 2 for white, row 5 for black)
     let isPromotion = false;
     let finalPiece = { ...piece, hasMoved: true };
 
     if (piece.type === 'trey') {
-      const promotionRank = piece.color === 'w' ? 2 : 5; // White: row index 2 (rank 6), Black: row index 5 (rank 3)
+      const promotionRank = piece.color === 'w' ? 2 : 5;
       if (to.row === promotionRank) {
         finalPiece.type = 'trey_kaet';
         isPromotion = true;
       }
     }
 
-    // Apply move
     activeBoard[to.row][to.col] = finalPiece;
     activeBoard[from.row][from.col] = null;
 
@@ -186,58 +330,64 @@ export default function Home() {
 
     const newHistory = [...history, moveObj];
     setHistory(newHistory);
-
-    // Update board state
     setBoard(activeBoard);
 
-    // Turn control & endgame state evaluations
+    // If academy mode is active, verify success of the challenge move
+    if (academyActive) {
+      const chapter = tutorialChapters[currentChapterIndex];
+      if (chapter.checkComplete(activeBoard, moveObj)) {
+        setChapterSuccess(true);
+        triggerHaptic();
+      } else {
+        // Failed move in academy: reset the board to retry
+        setTimeout(() => {
+          setBoard(chapter.setup());
+          setHistory([]);
+          setSelectedPos(null);
+          setLegalMoves([]);
+        }, 1000);
+      }
+      return;
+    }
+
     const nextTurn = turn === 'w' ? 'b' : 'w';
 
-    // Piece's Honor Counting evaluation
-    // Activates when BOTH sides have 0 unpromoted pawns (Trey)
+    // Piece's Honor Counting
     const nextBoardHasUnpromoted = hasUnpromotedPawns(activeBoard);
     let nextCounting = { ...countingState };
 
     if (!nextBoardHasUnpromoted) {
       if (!countingState.isActive) {
-        // Initiate counting
         const totalPieces = countTotalPieces(activeBoard);
         const { limit, reason } = getHonorCountingLimit(activeBoard, nextTurn);
-        
-        // Base count starts at remaining pieces + 1
-        const startCount = totalPieces + 1;
         nextCounting = {
           isActive: true,
-          count: startCount,
+          count: totalPieces + 1,
           limit,
           reason
         };
       } else {
-        // Increment counting
         const nextCount = countingState.count + 1;
         if (nextCount > countingState.limit) {
           setWinner('draw');
         }
         nextCounting.count = nextCount;
-        
-        // Re-evaluate limit just in case a piece got captured
         const { limit, reason } = getHonorCountingLimit(activeBoard, nextTurn);
         nextCounting.limit = limit;
         nextCounting.reason = reason;
       }
     }
-
     setCountingState(nextCounting);
 
-    // Checkmate / Stalemate evaluation for next turn
+    // Checkmate check
     const hasNextLegalMoves = hasAnyLegalMoves(activeBoard, nextTurn, newHistory);
     const checkState = isKingInCheck(activeBoard, nextTurn);
 
     if (!hasNextLegalMoves) {
       if (checkState) {
-        setWinner(turn); // Current turn wins (Checkmate)
+        setWinner(turn);
       } else {
-        setWinner('draw'); // Stalemate
+        setWinner('draw');
       }
     }
 
@@ -257,12 +407,12 @@ export default function Home() {
     return false;
   };
 
-  const isSquareSelected = (r: number, c: number) => {
-    return selectedPos?.row === r && selectedPos?.col === c;
-  };
-
-  const isSquareHighlighted = (r: number, c: number) => {
-    return legalMoves.some(m => m.row === r && m.col === c);
+  const isSquareSelected = (r: number, c: number) => selectedPos?.row === r && selectedPos?.col === c;
+  const isSquareHighlighted = (r: number, c: number) => legalMoves.some(m => m.row === r && m.col === c);
+  const isSquareCoachSuggested = (r: number, c: number) => {
+    if (!coachEnabled || !coachSuggestion) return false;
+    return (coachSuggestion.from.row === r && coachSuggestion.from.col === c) ||
+           (coachSuggestion.to.row === r && coachSuggestion.to.col === c);
   };
 
   const isLastMoveSquare = (r: number, c: number) => {
@@ -273,8 +423,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-radial from-slate-900 via-zinc-950 to-black text-white p-4 md:p-8 flex flex-col items-center">
-      {/* Header section with rich aesthetics */}
-      <header className="mb-6 text-center select-none animate-fade-in">
+      {/* Header */}
+      <header className="mb-4 text-center select-none">
         <h1 className="text-3xl md:text-5xl font-extrabold tracking-wider bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent drop-shadow-md">
           OUK CHATRANG
         </h1>
@@ -283,30 +433,62 @@ export default function Home() {
         </p>
       </header>
 
-      {/* Main Area */}
+      {/* Main Grid Area */}
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* Game Info / Counting Indicator (Left panel on Desktop) */}
+        {/* Left Control Panels (Status & Counting / Academy Guide) */}
         <div className="lg:col-span-3 flex flex-col gap-4">
           
-          {/* Status Display Card */}
+          {/* Main Status Panel */}
           <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-5 shadow-2xl backdrop-blur-md">
-            <h2 className="text-lg font-bold text-amber-400 border-b border-amber-500/20 pb-2 mb-3">Game Status</h2>
+            <h2 className="text-lg font-bold text-amber-400 border-b border-amber-500/20 pb-2 mb-3">
+              {academyActive ? 'Academy Mode' : 'Game Status'}
+            </h2>
             
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-slate-400">Current Turn:</span>
-              <span className={`px-4 py-1.5 rounded-full text-sm font-black tracking-wider uppercase transition-all duration-300 ${
-                turn === 'w' 
-                  ? 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(251,191,36,0.4)]' 
-                  : 'bg-slate-800 text-white border border-slate-700'
-              }`}>
-                {turn === 'w' ? 'Gold (White)' : 'Silver (Black)'}
-              </span>
-            </div>
+            {academyActive ? (
+              <div className="space-y-2">
+                <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-bold">
+                  Tutorial Challenge
+                </span>
+                <p className="text-slate-300 text-xs mt-2 font-semibold">
+                  {tutorialChapters[currentChapterIndex].instructions}
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-slate-400">Current Turn:</span>
+                <span className={`px-4 py-1.5 rounded-full text-sm font-black tracking-wider uppercase transition-all duration-300 ${
+                  turn === 'w' 
+                    ? 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(251,191,36,0.4)]' 
+                    : 'bg-slate-800 text-white border border-slate-700'
+                }`}>
+                  {turn === 'w' ? 'Gold (White)' : 'Silver (Black)'}
+                </span>
+              </div>
+            )}
 
             {winner && (
               <div className="mt-4 p-4 rounded-xl text-center font-bold text-lg animate-pulse border border-emerald-500/30 bg-emerald-950/40 text-emerald-400">
                 {winner === 'draw' ? 'Game Drawn!' : `${winner === 'w' ? 'Gold' : 'Silver'} Wins!`}
+              </div>
+            )}
+
+            {chapterSuccess && (
+              <div className="mt-4 p-4 rounded-xl text-center font-bold text-lg border border-emerald-500 bg-emerald-950/80 text-emerald-400 animate-bounce">
+                🎉 Challenge Complete!
+                <button 
+                  onClick={() => {
+                    if (currentChapterIndex < tutorialChapters.length - 1) {
+                      startAcademyChapter(currentChapterIndex + 1);
+                    } else {
+                      resetGame();
+                      setActiveTab('academy');
+                    }
+                  }}
+                  className="w-full mt-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold py-2 rounded-lg transition-all"
+                >
+                  {currentChapterIndex < tutorialChapters.length - 1 ? 'Next Chapter ➔' : 'Back to Academy'}
+                </button>
               </div>
             )}
 
@@ -317,56 +499,91 @@ export default function Home() {
             )}
           </div>
 
-          {/* Piece's Honor Counting rule ticker */}
-          <div className={`bg-slate-950/80 border rounded-2xl p-5 shadow-2xl backdrop-blur-md transition-all duration-500 ${
-            countingState.isActive ? 'border-amber-500' : 'border-slate-800 opacity-60'
-          }`}>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="relative flex h-3 w-3">
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                  countingState.isActive ? 'bg-amber-400' : 'bg-slate-500'
-                }`}></span>
-                <span className={`relative inline-flex rounded-full h-3 w-3 ${
-                  countingState.isActive ? 'bg-amber-500' : 'bg-slate-600'
-                }`}></span>
-              </span>
-              <h2 className="text-lg font-bold text-amber-400">Honor Counting</h2>
-            </div>
-            
-            {countingState.isActive ? (
-              <div className="space-y-3">
-                <p className="text-xs text-amber-300/80 italic font-mono">{countingState.reason}</p>
-                <div className="flex justify-between items-end">
-                  <span className="text-slate-400 text-xs">Current Count:</span>
-                  <span className="text-3xl font-extrabold text-amber-400 tracking-tighter">
-                    {countingState.count} <span className="text-sm font-medium text-slate-500">/ {countingState.limit}</span>
-                  </span>
-                </div>
-                {/* Visual gauge bar */}
-                <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
-                  <div 
-                    className="bg-gradient-to-r from-yellow-500 to-amber-400 h-2.5 rounded-full transition-all duration-300"
-                    style={{ width: `${(countingState.count / countingState.limit) * 100}%` }}
-                  ></div>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-2">
-                  Reach count {countingState.limit} without being checkmated to trigger a Draw.
+          {/* Real-time Coach / Hints strategy card */}
+          {!academyActive && activeTab === 'play' && (
+            <div className="bg-slate-950/80 border border-slate-850 rounded-2xl p-5 shadow-2xl backdrop-blur-md">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                <h2 className="text-sm font-bold text-amber-400 flex items-center gap-1.5">
+                  🔮 AI Strategy Coach
+                </h2>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={coachEnabled} 
+                    onChange={(e) => setCoachEnabled(e.target.checked)} 
+                    className="sr-only peer" 
+                  />
+                  <div className="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-400 peer-checked:after:bg-slate-950"></div>
+                </label>
+              </div>
+              
+              {coachEnabled ? (
+                coachTip ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-slate-300 leading-relaxed font-sans" dangerouslySetInnerHTML={{ __html: coachTip }}></p>
+                    <p className="text-[10px] text-amber-400/70 italic mt-2">
+                      💡 Suggested move coordinates are outlined in gold on the board!
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-slate-500 text-xs italic">Evaluating strategy on your turn...</p>
+                )
+              ) : (
+                <p className="text-slate-500 text-xs">
+                  Turn on Strategy Coach to receive live board suggestions and tactical advice detailing how to win.
                 </p>
+              )}
+            </div>
+          )}
+
+          {/* Piece's Honor Counting rule ticker */}
+          {!academyActive && (
+            <div className={`bg-slate-950/80 border rounded-2xl p-5 shadow-2xl backdrop-blur-md transition-all duration-500 ${
+              countingState.isActive ? 'border-amber-500' : 'border-slate-800 opacity-60'
+            }`}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="relative flex h-3 w-3">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                    countingState.isActive ? 'bg-amber-400' : 'bg-slate-500'
+                  }`}></span>
+                  <span className={`relative inline-flex rounded-full h-3 w-3 ${
+                    countingState.isActive ? 'bg-amber-500' : 'bg-slate-600'
+                  }`}></span>
+                </span>
+                <h2 className="text-lg font-bold text-amber-400">Honor Counting</h2>
               </div>
-            ) : (
-              <div className="text-slate-500 text-xs py-2">
-                Endgame counting rules activate automatically when all unpromoted Trey (pawns) have been promoted or captured.
-              </div>
-            )}
-          </div>
+              
+              {countingState.isActive ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-amber-300/80 italic font-mono">{countingState.reason}</p>
+                  <div className="flex justify-between items-end">
+                    <span className="text-slate-400 text-xs">Current Count:</span>
+                    <span className="text-3xl font-extrabold text-amber-400 tracking-tighter">
+                      {countingState.count} <span className="text-sm font-medium text-slate-500">/ {countingState.limit}</span>
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-yellow-500 to-amber-400 h-2.5 rounded-full transition-all duration-300"
+                      style={{ width: `${(countingState.count / countingState.limit) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-slate-500 text-xs">
+                  Active in late endgame states when all Trey (pawns) are promoted or captured.
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* 8x8 Board Container (Center) */}
+        {/* Center: 8x8 Board Container */}
         <div className="lg:col-span-6 flex flex-col items-center">
           
-          {/* Main Board */}
+          {/* Main Wooden Board */}
           <div className="relative w-full max-w-[500px] aspect-square rounded-xl overflow-hidden border-[12px] border-[#1d120a] shadow-[0_20px_50px_rgba(0,0,0,0.7)] bg-[#e6cb9f] p-1 select-none">
-            {/* Wooden Texture Background Grid overlay */}
+            {/* Wooden Texture Grid overlay */}
             <div className="absolute inset-0 bg-cover bg-center opacity-[0.15] mix-blend-multiply pointer-events-none" 
                  style={{ backgroundImage: 'radial-gradient(circle, #ffe3bd 0%, #d8b888 100%)' }}>
             </div>
@@ -377,6 +594,7 @@ export default function Home() {
                   const selected = isSquareSelected(r, c);
                   const highlighted = isSquareHighlighted(r, c);
                   const isLastMove = isLastMoveSquare(r, c);
+                  const coachHighlighted = isSquareCoachSuggested(r, c);
 
                   return (
                     <div
@@ -384,6 +602,8 @@ export default function Home() {
                       onClick={() => handleSquareClick(r, c)}
                       className={`relative flex items-center justify-center cursor-pointer transition-all duration-200 bg-[#e6cb9f] hover:bg-[#dfc295] ${
                         selected ? 'bg-[#cdaf82]/80 ring-4 ring-[#5c3a21] ring-inset' : ''
+                      } ${
+                        coachHighlighted && !selected ? 'ring-4 ring-amber-400/60 ring-inset shadow-[0_0_15px_rgba(251,191,36,0.3)]' : ''
                       } ${
                         isLastMove ? 'after:absolute after:inset-0 after:border-2 after:border-[#5c3a21]/50' : ''
                       }`}
@@ -414,99 +634,173 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Panel for Controls & Moves List (Right) */}
+        {/* Right side tab interface for Play controls & Academy Academy */}
         <div className="lg:col-span-3 flex flex-col gap-4">
           
-          {/* Controls Panel */}
-          <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-5 shadow-2xl backdrop-blur-md">
-            <h2 className="text-lg font-bold text-amber-400 border-b border-amber-500/20 pb-2 mb-4">Setup Controls</h2>
-            
-            <div className="space-y-4">
-              {/* Opponent Selection Toggle */}
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">Opponent Type</label>
-                <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
+          {/* Tab Selector */}
+          <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
+            <button 
+              onClick={() => { setActiveTab('play'); setAcademyActive(false); }}
+              className={`py-2 text-xs font-black tracking-wider uppercase rounded-xl transition-all ${
+                activeTab === 'play' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Play Match
+            </button>
+            <button 
+              onClick={() => setActiveTab('academy')}
+              className={`py-2 text-xs font-black tracking-wider uppercase rounded-xl transition-all ${
+                activeTab === 'academy' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Academy 🎓
+            </button>
+          </div>
+
+          {/* TAB 1: Playing options */}
+          {activeTab === 'play' && (
+            <>
+              {/* Controls Panel */}
+              <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-5 shadow-2xl backdrop-blur-md">
+                <h2 className="text-lg font-bold text-amber-400 border-b border-amber-500/20 pb-2 mb-4">Setup Controls</h2>
+                
+                <div className="space-y-4">
+                  {/* Opponent Selection Toggle */}
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Opponent Type</label>
+                    <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                      <button 
+                        onClick={() => setVsAI(false)}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                          !vsAI ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        2 Players
+                      </button>
+                      <button 
+                        onClick={() => setVsAI(true)}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                          vsAI ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        AI Opponent
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* AI Strength */}
+                  {vsAI && (
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">AI Difficulty</label>
+                      <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                        <button 
+                          onClick={() => setAiDifficulty('easy')}
+                          className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                            aiDifficulty === 'easy' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          Local Engine
+                        </button>
+                        <button 
+                          onClick={() => setAiDifficulty('engine')}
+                          className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                            aiDifficulty === 'engine' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          Fairy-Stockfish
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reset Game Action */}
                   <button 
-                    onClick={() => setVsAI(false)}
-                    className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
-                      !vsAI ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-                    }`}
+                    onClick={resetGame}
+                    className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-sm transition-all duration-300 shadow-[0_0_15px_rgba(217,119,6,0.2)]"
                   >
-                    2 Players
-                  </button>
-                  <button 
-                    onClick={() => setVsAI(true)}
-                    className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
-                      vsAI ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    AI Opponent
+                    Reset / New Game
                   </button>
                 </div>
               </div>
 
-              {/* AI Strength */}
-              {vsAI && (
-                <div>
-                  <label className="text-xs text-slate-400 block mb-1">AI Difficulty</label>
-                  <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                    <button 
-                      onClick={() => setAiDifficulty('easy')}
-                      className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
-                        aiDifficulty === 'easy' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Local Engine
-                    </button>
-                    <button 
-                      onClick={() => setAiDifficulty('engine')}
-                      className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
-                        aiDifficulty === 'engine' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Fairy-Stockfish
-                    </button>
-                  </div>
+              {/* Move History Logger */}
+              <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col h-[200px] backdrop-blur-md">
+                <h2 className="text-lg font-bold text-amber-400 border-b border-amber-500/20 pb-2 mb-2 flex justify-between items-center">
+                  <span>Moves History</span>
+                  <span className="text-xs font-mono text-slate-500">{history.length} moves</span>
+                </h2>
+                <div className="flex-1 overflow-y-auto pr-1 text-slate-300 text-xs font-mono space-y-1">
+                  {history.map((m, i) => {
+                    const turnNum = Math.floor(i / 2) + 1;
+                    const isWhite = i % 2 === 0;
+                    const pieceName = m.piece.type.replace('_', ' ').toUpperCase();
+                    
+                    return (
+                      <div key={i} className={`p-1.5 rounded ${isWhite ? 'bg-slate-900/40' : 'bg-slate-800/20'}`}>
+                        <span className="text-amber-500/70 mr-2">{turnNum}.</span>
+                        <span className={isWhite ? 'text-amber-300' : 'text-slate-200'}>
+                          {isWhite ? 'Gold' : 'Silver'} {pieceName}: {toAlgebraic(m.from)} → {toAlgebraic(m.to)}
+                          {m.captured && <span className="text-red-400 ml-1">x {m.captured.type}</span>}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {history.length === 0 && (
+                    <div className="text-slate-500 text-center py-10 italic">No moves logged yet.</div>
+                  )}
                 </div>
-              )}
+              </div>
+            </>
+          )}
 
-              {/* Reset Game Action */}
-              <button 
-                onClick={resetGame}
-                className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-sm transition-all duration-300 shadow-[0_0_15px_rgba(217,119,6,0.2)]"
-              >
-                Reset / New Game
-              </button>
-            </div>
-          </div>
+          {/* TAB 2: Tutorial Academy Panel */}
+          {activeTab === 'academy' && (
+            <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-5 shadow-2xl flex flex-col backdrop-blur-md space-y-4">
+              <h2 className="text-lg font-bold text-amber-400 border-b border-amber-500/20 pb-2">
+                Ouk Chatrang Academy 🎓
+              </h2>
+              
+              <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                Learn Ouk Chatrang rules step-by-step with guided interactive challenges. Click a chapter below to practice!
+              </p>
 
-          {/* Move History Logger */}
-          <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col h-[230px] backdrop-blur-md">
-            <h2 className="text-lg font-bold text-amber-400 border-b border-amber-500/20 pb-2 mb-2 flex justify-between items-center">
-              <span>Moves History</span>
-              <span className="text-xs font-mono text-slate-500">{history.length} moves</span>
-            </h2>
-            <div className="flex-1 overflow-y-auto pr-1 text-slate-300 text-xs font-mono space-y-1">
-              {history.map((m, i) => {
-                const turnNum = Math.floor(i / 2) + 1;
-                const isWhite = i % 2 === 0;
-                const pieceName = m.piece.type.replace('_', ' ').toUpperCase();
-                
-                return (
-                  <div key={i} className={`p-1.5 rounded ${isWhite ? 'bg-slate-900/40' : 'bg-slate-800/20'}`}>
-                    <span className="text-amber-500/70 mr-2">{turnNum}.</span>
-                    <span className={isWhite ? 'text-amber-300' : 'text-slate-200'}>
-                      {isWhite ? 'Gold' : 'Silver'} {pieceName}: {toAlgebraic(m.from)} → {toAlgebraic(m.to)}
-                      {m.captured && <span className="text-red-400 ml-1">x {m.captured.type}</span>}
-                    </span>
-                  </div>
-                );
-              })}
-              {history.length === 0 && (
-                <div className="text-slate-500 text-center py-10 italic">No moves logged yet.</div>
+              <div className="space-y-2 flex-1 overflow-y-auto pr-1">
+                {tutorialChapters.map((chapter, index) => {
+                  const isActive = academyActive && currentChapterIndex === index;
+                  return (
+                    <div 
+                      key={chapter.id} 
+                      onClick={() => startAcademyChapter(index)}
+                      className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                        isActive 
+                          ? 'border-amber-400 bg-amber-400/10' 
+                          : 'border-slate-800 bg-slate-900/40 hover:bg-slate-900/80'
+                      }`}
+                    >
+                      <h3 className="text-xs font-bold text-amber-400 mb-1">{chapter.title}</h3>
+                      <p className="text-[10px] text-slate-400 leading-relaxed font-sans">{chapter.description}</p>
+                      
+                      {isActive && (
+                        <div className="mt-2 text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                          🎯 Status: Active Challenge
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {academyActive && (
+                <button 
+                  onClick={resetGame}
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2 rounded-xl text-xs transition-all"
+                >
+                  Exit Tutorial Mode
+                </button>
               )}
             </div>
-          </div>
+          )}
+
         </div>
 
       </div>
