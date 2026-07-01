@@ -365,16 +365,15 @@ export default function Home() {
         <div className="lg:col-span-6 flex flex-col items-center">
           
           {/* Main Board */}
-          <div className="relative w-full max-w-[500px] aspect-square rounded-2xl overflow-hidden border-4 border-amber-600 shadow-[0_0_50px_rgba(217,119,6,0.15)] bg-slate-900 p-2 select-none">
+          <div className="relative w-full max-w-[500px] aspect-square rounded-xl overflow-hidden border-[12px] border-[#1d120a] shadow-[0_20px_50px_rgba(0,0,0,0.7)] bg-[#e6cb9f] p-1 select-none">
             {/* Wooden Texture Background Grid overlay */}
-            <div className="absolute inset-0 bg-cover bg-center opacity-10 mix-blend-overlay pointer-events-none" 
-                 style={{ backgroundImage: 'radial-gradient(circle, #38250e 0%, #150a02 100%)' }}>
+            <div className="absolute inset-0 bg-cover bg-center opacity-[0.15] mix-blend-multiply pointer-events-none" 
+                 style={{ backgroundImage: 'radial-gradient(circle, #ffe3bd 0%, #d8b888 100%)' }}>
             </div>
             
-            <div className="w-full h-full grid grid-cols-8 grid-rows-8 gap-[2px] bg-amber-950/60 rounded-xl overflow-hidden">
+            <div className="w-full h-full grid grid-cols-8 grid-rows-8 gap-[1.5px] bg-[#1d120a] overflow-hidden">
               {board.map((row, r) => 
                 row.map((piece, c) => {
-                  const isDark = (r + c) % 2 === 1;
                   const selected = isSquareSelected(r, c);
                   const highlighted = isSquareHighlighted(r, c);
                   const isLastMove = isLastMoveSquare(r, c);
@@ -383,23 +382,21 @@ export default function Home() {
                     <div
                       key={`${r}-${c}`}
                       onClick={() => handleSquareClick(r, c)}
-                      className={`relative flex items-center justify-center cursor-pointer transition-all duration-200 ${
-                        isDark 
-                          ? 'bg-amber-900/40 hover:bg-amber-900/60' 
-                          : 'bg-amber-100/10 hover:bg-amber-100/20'
-                      } ${selected ? 'bg-amber-500/40 ring-4 ring-amber-400 ring-inset' : ''} ${
-                        isLastMove ? 'after:absolute after:inset-0 after:border-2 after:border-amber-400/50' : ''
+                      className={`relative flex items-center justify-center cursor-pointer transition-all duration-200 bg-[#e6cb9f] hover:bg-[#dfc295] ${
+                        selected ? 'bg-[#cdaf82]/80 ring-4 ring-[#5c3a21] ring-inset' : ''
+                      } ${
+                        isLastMove ? 'after:absolute after:inset-0 after:border-2 after:border-[#5c3a21]/50' : ''
                       }`}
                     >
                       {/* Highlight indicator for legal moves */}
                       {highlighted && (
-                        <div className="absolute z-10 w-4 h-4 rounded-full bg-emerald-400/70 shadow-[0_0_10px_rgba(52,211,153,0.8)] animate-pulse"></div>
+                        <div className="absolute z-10 w-4 h-4 rounded-full bg-emerald-500/70 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse"></div>
                       )}
 
                       {/* Render chess piece */}
                       {piece && (
                         <div className={`w-[85%] h-[85%] z-20 transition-transform duration-300 ${
-                          piece.color === turn ? 'hover:scale-110 active:scale-95' : ''
+                          piece.color === turn ? 'hover:scale-105 active:scale-95' : ''
                         }`}>
                           <PieceIcon type={piece.type} color={piece.color} />
                         </div>
