@@ -10,6 +10,7 @@ import {
   hasUnpromotedPawns,
   copyBoard,
   toAlgebraic,
+  minimax,
   Board,
   Position,
   Move,
@@ -108,38 +109,10 @@ export default function Home() {
       setIsCalculatedByEngine(false);
     }
 
-    // 2. Fallback to Local Easy AI (Random legal move prioritizing captures)
-    const allPieces: Position[] = [];
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
-        if (board[r]?.[c]?.color === 'b') {
-          allPieces.push({ row: r, col: c });
-        }
-      }
-    }
-
-    const possibleMoves: { from: Position; to: Position; weight: number }[] = [];
-    allPieces.forEach(from => {
-      const targets = getLegalMoves(board, from, history);
-      targets.forEach(to => {
-        const dest = board[to.row][to.col];
-        let weight = 1;
-        if (dest) {
-          // Weight based on captured piece value
-          const values: Record<string, number> = { sdaach: 100, touk: 8, sesh: 5, koul: 4, neang: 3, trey_kaet: 3, trey: 1 };
-          weight += (values[dest.type] || 1) * 5;
-        }
-        possibleMoves.push({ from, to, weight });
-      });
-    });
-
-    if (possibleMoves.length > 0) {
-      // Choose weighted random move
-      possibleMoves.sort((a, b) => b.weight - a.weight);
-      // Pick randomly from the top 3 options
-      const pool = possibleMoves.slice(0, Math.min(3, possibleMoves.length));
-      const chosen = pool[Math.floor(Math.random() * pool.length)];
-      executeMove(chosen.from, chosen.to);
+    // 2. Local AI Engine (3-ply Minimax Search with Alpha-Beta pruning)
+    const result = minimax(board, 3, -Infinity, Infinity, false, history);
+    if (result.move) {
+      executeMove(result.move.from, result.move.to);
     } else {
       // Checkmate or Stalemate
       if (isKingInCheck(board, 'b')) {

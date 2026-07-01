@@ -505,3 +505,128 @@ export function countTotalPieces(board: Board): number {
   }
   return count;
 }
+
+// Evaluate board for Minimax. Positive is good for White, Negative is good for Black.
+export function evaluateBoard(board: Board): number {
+  let score = 0;
+  const values: Record<PieceType, number> = {
+    sdaach: 10000,
+    touk: 80,
+    sesh: 50,
+    koul: 40,
+    neang: 20,
+    trey_kaet: 20,
+    trey: 10
+  };
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const piece = board[r][c];
+      if (piece) {
+        let val = values[piece.type] || 0;
+        
+        // Positional additions: encourage control of center
+        if (r >= 3 && r <= 4 && c >= 3 && c <= 4) {
+          val += 2;
+        }
+        
+        // Trey advancement encouragement
+        if (piece.type === 'trey') {
+          val += (piece.color === 'w' ? (7 - r) : r) * 0.5;
+        }
+
+        if (piece.color === 'w') {
+          score += val;
+        } else {
+          score -= val;
+        }
+      }
+    }
+  }
+  return score;
+}
+
+// Minimax search with Alpha-Beta pruning
+export function minimax(
+  board: Board,
+  depth: number,
+  alpha: number,
+  beta: number,
+  isMaximizing: boolean,
+  history: Move[]
+): { score: number; move: { from: Position; to: Position } | null } {
+  if (depth === 0) {
+    return { score: evaluateBoard(board), move: null };
+  }
+
+  const activeColor: PieceColor = isMaximizing ? 'w' : 'b';
+  const moves: { from: Position; to: Position }[] = [];
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (board[r][c]?.color === activeColor) {
+        const from = { row: r, col: c };
+        const targets = getLegalMoves(board, from, history);
+        targets.forEach(to => {
+          moves.push({ from, to });
+        });
+      }
+    }
+  }
+
+  if (moves.length === 0) {
+    if (isKingInCheck(board, activeColor)) {
+      // Checkmate: value depends on depth to find fastest mate
+      return { score: isMaximizing ? -20000 + depth : 20000 - depth, move: null };
+    }
+    return { score: 0, move: null }; // Stalemate
+  }
+
+  // Move ordering: evaluate captures first for better alpha-beta efficiency
+  moves.sort((a, b) => {
+    const targetA = board[a.to.row][a.to.col];
+    const targetB = board[b.to.row][b.to.col];
+    const valA = targetA ? 1 : 0;
+    const valB = targetB ? 1 : 0;
+    return valB - valA;
+  });
+
+  let bestMove: { from: Position; to: Position } | null = null;
+
+  if (isMaximizing) {
+    let maxScore = -Infinity;
+    for (const move of moves) {
+      const nextBoard = copyBoard(board);
+      const piece = nextBoard[move.from.row][move.from.col]!;
+      nextBoard[move.to.row][move.to.col] = { ...piece, hasMoved: true };
+      nextBoard[move.from.row][move.from.col] = null;
+
+      const { score } = minimax(nextBoard, depth - 1, alpha, beta, false, history);
+      if (score > maxScore) {
+        maxScore = score;
+        bestMove = move;
+      }
+      alpha = Math.max(alpha, score);
+      if (beta <= alpha) break; // Prune
+    }
+    return { score: maxScore, move: bestMove };
+  } else {
+    let minScore = Infinity;
+    for (const move of moves) {
+      const nextBoard = copyBoard(board);
+      const piece = nextBoard[move.from.row][move.from.col]!;
+      nextBoard[move.to.row][move.to.col] = { ...piece, hasMoved: true };
+      nextBoard[move.from.row][move.from.col] = null;
+
+      const { score } = minimax(nextBoard, depth - 1, alpha, beta, true, history);
+      if (score < minScore) {
+        minScore = score;
+        bestMove = move;
+      }
+      beta = Math.min(beta, score);
+      if (beta <= alpha) break; // Prune
+    }
+    return { score: minScore, move: bestMove };
+  }
+}
+
