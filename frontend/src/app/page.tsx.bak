@@ -25,11 +25,9 @@ interface TutorialChapter {
   id: number;
   title: string;
   description: string;
-  instructions: string | ((history: Move[]) => string);
+  instructions: string;
   setup: () => Board;
-  checkComplete: (board: Board, move: Move, history: Move[]) => boolean;
-  checkMove?: (move: Move, history: Move[]) => boolean;
-  guideMove?: (history: Move[]) => { from: Position; to: Position } | null;
+  checkComplete: (board: Board, move: Move) => boolean;
 }
 
 export default function Home() {
@@ -90,11 +88,7 @@ export default function Home() {
       },
       checkComplete: (currentBoard, move) => {
         return move.to.row === 4 && move.to.col === 3 && move.captured?.type === 'trey';
-      },
-      guideMove: () => ({
-        from: { row: 5, col: 4 }, // e3
-        to: { row: 4, col: 3 }    // d4
-      })
+      }
     },
     {
       id: 1,
@@ -111,11 +105,7 @@ export default function Home() {
       },
       checkComplete: (currentBoard, move) => {
         return move.to.row === 3 && move.to.col === 3 && move.captured?.type === 'trey';
-      },
-      guideMove: () => ({
-        from: { row: 4, col: 3 }, // d4
-        to: { row: 3, col: 3 }    // d5
-      })
+      }
     },
     {
       id: 2,
@@ -130,11 +120,7 @@ export default function Home() {
       },
       checkComplete: (currentBoard, move) => {
         return move.to.row === 5 && move.to.col === 5; // f3 (row 5, col 5)
-      },
-      guideMove: () => ({
-        from: { row: 7, col: 4 }, // e1
-        to: { row: 5, col: 5 }    // f3
-      })
+      }
     },
     {
       id: 3,
@@ -150,56 +136,6 @@ export default function Home() {
       },
       checkComplete: (currentBoard, move) => {
         return move.to.row === 2 && move.to.col === 4 && currentBoard[2][4]?.type === 'trey_kaet';
-      },
-      guideMove: () => ({
-        from: { row: 3, col: 4 }, // e5
-        to: { row: 2, col: 4 }    // e6
-      })
-    },
-    {
-      id: 4,
-      title: "៥. យុទ្ធសាស្ត្រក្បួនស្នែង (Horn Defense Setup)",
-      description: "អភិវឌ្ឍសេះទាំងពីរឡើងទៅកាន់ការ៉ូ c4 និង f4។ ត្រូវរុញត្រីនៅ c3 និង f3 ឡើងមុនសិន ដើម្បីបើកផ្លូវឱ្យសេះលោត។ នេះជាយុទ្ធសាស្ត្រមានតុល្យភាពបំផុត និងពេញនិយមបំផុត។",
-      instructions: (history: Move[]) => {
-        if (history.length === 0) return "ជំហានទី១៖ រុញត្រីពី c3 ទៅ c4 ដើម្បីបើកផ្លូវឱ្យសេះ។";
-        if (history.length === 1) return "ជំហានទី២៖ រុញត្រីពី f3 ទៅ f4 ដើម្បីបើកផ្លូវឱ្យសេះ។";
-        if (history.length === 2) return "ជំហានទី៣៖ ឡើងសេះខាងឆ្វេងពី b1 ទៅ c3 ។";
-        if (history.length === 3) return "ជំហានទី៤៖ ឡើងសេះខាងស្តាំពី g1 ទៅ f3 ។";
-        return "យុទ្ធសាស្ត្រក្បួនស្នែងត្រូវបានរៀបចំរួចរាល់! 🌟";
-      },
-      setup: () => {
-        return createInitialBoard();
-      },
-      checkMove: (move, history) => {
-        const step = history.length;
-        if (step === 1) {
-          // Step 1: Push c3 pawn to c4 (row 5, col 2 → row 4, col 2)
-          return move.from.row === 5 && move.from.col === 2 && move.to.row === 4 && move.to.col === 2;
-        }
-        if (step === 2) {
-          // Step 2: Push f3 pawn to f4 (row 5, col 5 → row 4, col 5)
-          return move.from.row === 5 && move.from.col === 5 && move.to.row === 4 && move.to.col === 5;
-        }
-        if (step === 3) {
-          // Step 3: Knight b1 to c3 (row 7, col 1 → row 5, col 2)
-          return move.from.row === 7 && move.from.col === 1 && move.to.row === 5 && move.to.col === 2;
-        }
-        if (step === 4) {
-          // Step 4: Knight g1 to f3 (row 7, col 6 → row 5, col 5)
-          return move.from.row === 7 && move.from.col === 6 && move.to.row === 5 && move.to.col === 5;
-        }
-        return false;
-      },
-      checkComplete: (board, move, history) => {
-        return history.length === 4;
-      },
-      guideMove: (history) => {
-        const step = history.length;
-        if (step === 0) return { from: { row: 5, col: 2 }, to: { row: 4, col: 2 } }; // c3 -> c4
-        if (step === 1) return { from: { row: 5, col: 5 }, to: { row: 4, col: 5 } }; // f3 -> f4
-        if (step === 2) return { from: { row: 7, col: 1 }, to: { row: 5, col: 2 } }; // b1 -> c3
-        if (step === 3) return { from: { row: 7, col: 6 }, to: { row: 5, col: 5 } }; // g1 -> f3
-        return null;
       }
     }
   ];
@@ -414,16 +350,9 @@ export default function Home() {
     // If academy mode is active, verify success of the challenge move
     if (academyActive) {
       const chapter = tutorialChapters[currentChapterIndex];
-      const isCorrect = chapter.checkMove 
-        ? chapter.checkMove(moveObj, newHistory) 
-        : chapter.checkComplete(activeBoard, moveObj, newHistory);
-      
-      if (isCorrect) {
-        const isFinished = chapter.checkComplete(activeBoard, moveObj, newHistory);
-        if (isFinished) {
-          setChapterSuccess(true);
-          triggerHaptic();
-        }
+      if (chapter.checkComplete(activeBoard, moveObj)) {
+        setChapterSuccess(true);
+        triggerHaptic();
       } else {
         // Failed move in academy: reset the board to retry
         setTimeout(() => {
@@ -528,40 +457,15 @@ export default function Home() {
     return (last.from.row === r && last.from.col === c) || (last.to.row === r && last.to.col === c);
   };
 
-  const getAcademyGuideMove = (): { from: Position; to: Position } | null => {
-    if (!academyActive) return null;
-    const chapter = tutorialChapters[currentChapterIndex];
-    if (chapter.guideMove) {
-      return chapter.guideMove(history);
-    }
-    return null;
-  };
-
-  const academyGuide = getAcademyGuideMove();
-
-  const isSquareAcademyGuidedFrom = (r: number, c: number) => {
-    return academyGuide && academyGuide.from.row === r && academyGuide.from.col === c;
-  };
-
-  const isSquareAcademyGuidedTo = (r: number, c: number) => {
-    return academyGuide && academyGuide.to.row === r && academyGuide.to.col === c;
-  };
-
   return (
-    <div className={`min-h-screen text-white p-4 md:p-8 flex flex-col items-center transition-all duration-500 bg-radial ${
-      activeTab === 'academy' 
-        ? 'from-emerald-950 via-zinc-950 to-black' 
-        : 'from-slate-900 via-zinc-950 to-black'
-    }`}>
+    <div className="min-h-screen bg-radial from-slate-900 via-zinc-950 to-black text-white p-4 md:p-8 flex flex-col items-center">
       {/* Header */}
       <header className="mb-4 text-center select-none">
         <h1 className="text-3xl md:text-5xl font-bold tracking-wider bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent drop-shadow-md">
           OUK CHATRANG
         </h1>
-        <p className={`text-xs md:text-sm font-semibold tracking-widest mt-1 uppercase transition-colors duration-500 ${
-          activeTab === 'academy' ? 'text-emerald-400' : 'text-amber-500/80'
-        }`}>
-          {activeTab === 'academy' ? 'សាលាបណ្តុះបណ្តាលអុកចត្រង្គ • Chess Academy' : 'អុកចត្រង្គ • Cambodian Traditional Chess'}
+        <p className="text-xs md:text-sm font-semibold tracking-widest text-amber-500/80 mt-1 uppercase">
+          អុកចត្រង្គ • Cambodian Traditional Chess
         </p>
       </header>
 
@@ -583,9 +487,7 @@ export default function Home() {
                   Tutorial Challenge
                 </span>
                 <p className="text-slate-300 text-xs mt-2 font-semibold">
-                  {typeof tutorialChapters[currentChapterIndex].instructions === 'function'
-                    ? (tutorialChapters[currentChapterIndex].instructions as any)(history)
-                    : tutorialChapters[currentChapterIndex].instructions}
+                  {tutorialChapters[currentChapterIndex].instructions}
                 </p>
               </div>
             ) : (
@@ -722,61 +624,34 @@ export default function Home() {
                  style={{ backgroundImage: 'radial-gradient(circle, #ffe3bd 0%, #d8b888 100%)' }}>
             </div>
             
-            <div className="relative w-full h-full grid grid-cols-8 grid-rows-8 gap-[1.5px] bg-[#1d120a] overflow-hidden">
+            <div className="w-full h-full grid grid-cols-8 grid-rows-8 gap-[1.5px] bg-[#1d120a] overflow-hidden">
               {board.map((row, r) => 
                 row.map((piece, c) => {
                   const selected = isSquareSelected(r, c);
                   const highlighted = isSquareHighlighted(r, c);
                   const isLastMove = isLastMoveSquare(r, c);
                   const coachHighlighted = isSquareCoachSuggested(r, c);
-                  const isGuideFrom = !chapterSuccess && isSquareAcademyGuidedFrom(r, c);
-                  const isGuideTo = !chapterSuccess && isSquareAcademyGuidedTo(r, c);
-                  const isEatTarget = isGuideTo && piece && piece.color !== 'w';
 
                   return (
                     <div
                       key={`${r}-${c}`}
                       onClick={() => handleSquareClick(r, c)}
-                      className={`relative flex items-center justify-center cursor-pointer transition-colors duration-200 bg-[#e6cb9f] hover:bg-[#dfc295]
-                        ${selected ? 'bg-[#cdaf82]/80 ring-4 ring-[#5c3a21] ring-inset' : ''}
-                        ${coachHighlighted && !selected ? 'ring-4 ring-amber-400/60 ring-inset shadow-[0_0_15px_rgba(251,191,36,0.3)]' : ''}
-                        ${isLastMove ? 'after:absolute after:inset-0 after:border-2 after:border-[#5c3a21]/50' : ''}
-                        ${isGuideFrom && !selected ? 'academy-from-square' : ''}
-                        ${isGuideTo && !isEatTarget ? 'academy-to-square' : ''}
-                        ${isEatTarget ? 'academy-eat-square' : ''}
-                      `}
+                      className={`relative flex items-center justify-center cursor-pointer transition-all duration-200 bg-[#e6cb9f] hover:bg-[#dfc295] ${
+                        selected ? 'bg-[#cdaf82]/80 ring-4 ring-[#5c3a21] ring-inset' : ''
+                      } ${
+                        coachHighlighted && !selected ? 'ring-4 ring-amber-400/60 ring-inset shadow-[0_0_15px_rgba(251,191,36,0.3)]' : ''
+                      } ${
+                        isLastMove ? 'after:absolute after:inset-0 after:border-2 after:border-[#5c3a21]/50' : ''
+                      }`}
                     >
                       {/* Highlight indicator for legal moves */}
                       {highlighted && (
                         <div className="absolute z-10 w-4 h-4 rounded-full bg-emerald-500/70 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse"></div>
                       )}
 
-                      {/* Academy guide "FROM" label */}
-                      {isGuideFrom && !selected && (
-                        <div className="absolute z-30 top-0.5 right-0.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center shadow-lg pointer-events-none">
-                          <span className="text-[7px] font-black text-slate-900">GO</span>
-                        </div>
-                      )}
-
-                      {/* Academy guide "TO" destination marker */}
-                      {isGuideTo && !isEatTarget && !selected && (
-                        <div className="absolute z-30 inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="w-8 h-8 rounded-full border-[3px] border-emerald-400 bg-emerald-400/20 animate-ping" style={{ animationDuration: '1.4s' }}></div>
-                        </div>
-                      )}
-
-                      {/* Academy guide "EAT" target marker */}
-                      {isEatTarget && !selected && (
-                        <div className="absolute z-30 inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="w-8 h-8 rounded-full border-[3px] border-red-400 bg-red-400/10 animate-ping" style={{ animationDuration: '1.0s' }}></div>
-                        </div>
-                      )}
-
                       {/* Render chess piece */}
                       {piece && (
                         <div className={`w-[85%] h-[85%] z-20 transition-transform duration-300 ${
-                          isGuideFrom ? 'guide-arrow-float' : ''
-                        } ${
                           piece.color === turn ? 'hover:scale-105 active:scale-95' : ''
                         }`}>
                           <PieceIcon type={piece.type} color={piece.color} />
@@ -786,53 +661,6 @@ export default function Home() {
                   );
                 })
               )}
-
-              {/* SVG Arrow Overlay — drawn on top of the grid */}
-              {academyActive && academyGuide && !chapterSuccess && (() => {
-                const { from, to } = academyGuide;
-                const cellPct = 100 / 8;
-                // Center of each cell in SVG viewBox (0 0 100 100)
-                const x1 = from.col * cellPct + cellPct / 2;
-                const y1 = from.row * cellPct + cellPct / 2;
-                const x2 = to.col   * cellPct + cellPct / 2;
-                const y2 = to.row   * cellPct + cellPct / 2;
-
-                // Shorten line so it doesn't overlap piece icon
-                const dx = x2 - x1, dy = y2 - y1;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const shrink = Math.min(4.5, dist * 0.3);
-                const sx = x1 + (dx / dist) * shrink;
-                const sy = y1 + (dy / dist) * shrink;
-                const ex = x2 - (dx / dist) * shrink;
-                const ey = y2 - (dy / dist) * shrink;
-
-                const isEat = board[to.row]?.[to.col] && board[to.row][to.col]?.color !== 'w';
-                const arrowColor = isEat ? '#f87171' : '#34d399';
-                const shadowColor = isEat ? 'rgba(239,68,68,0.9)' : 'rgba(52,211,153,0.9)';
-
-                return (
-                  <svg
-                    key={`arrow-${from.row}-${from.col}-${to.row}-${to.col}-${history.length}`}
-                    viewBox="0 0 100 100"
-                    className="absolute inset-0 w-full h-full pointer-events-none z-40"
-                    style={{ filter: `drop-shadow(0 0 4px ${shadowColor})` }}
-                  >
-                    <defs>
-                      <marker id="arrowhead" markerWidth="5" markerHeight="5" refX="2.5" refY="1.5" orient="auto">
-                        <polygon points="0 3, 5 1.5, 0 0" fill={arrowColor} className="guide-arrow-head" />
-                      </marker>
-                    </defs>
-                    <line
-                      x1={sx} y1={sy} x2={ex} y2={ey}
-                      stroke={arrowColor}
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      markerEnd="url(#arrowhead)"
-                      className="guide-arrow-path"
-                    />
-                  </svg>
-                );
-              })()}
             </div>
           </div>
           
@@ -840,26 +668,7 @@ export default function Home() {
           <div className="flex w-full max-w-[500px] justify-between px-6 text-xs text-amber-500/70 font-bold font-mono mt-2">
             <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
           </div>
-
-          {/* Academy legend */}
-          {academyActive && academyGuide && !chapterSuccess && (
-            <div className="flex gap-3 mt-3 text-xs font-semibold flex-wrap justify-center">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]"></div>
-                <span className="text-amber-300">ដើម (FROM)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"></div>
-                <span className="text-emerald-300">ទិសដៅ (TO)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-400 shadow-[0_0_6px_rgba(239,68,68,0.8)]"></div>
-                <span className="text-red-300">ស៊ី (CAPTURE)</span>
-              </div>
-            </div>
-          )}
         </div>
-
 
         {/* Right side tab interface for Play controls & Academy Academy */}
         <div className="lg:col-span-3 flex flex-col gap-4">
@@ -967,50 +776,63 @@ export default function Home() {
                         <span className="text-amber-500/70 mr-2">{turnNum}.</span>
                         <span className={isWhite ? 'text-amber-300' : 'text-slate-200'}>
                           {isWhite ? 'Gold' : 'Silver'} {pieceName}: {toAlgebraic(m.from)} → {toAlgebraic(m.to)}
-                          {m.captured && <span className="text-red-400 ml-1">x {m.captured.type}</span>}
-                        </span>
+                            {/* Strategy 1: Horns */}
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 space-y-1.5">
+                      <h3 className="text-xs font-bold text-amber-400">១. ក្បួនស្នែង ឬរបាំងស្នែង (Horn Defense)</h3>
+                      <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
+                        អភិវឌ្ឍសេះទាំងពីរឡើងទៅកាន់ការ៉ូ <strong>c3</strong> និង <strong>f3</strong> ដើម្បីគ្រប់គ្រងក្រឡាកណ្តាលក្តារ និងបង្កើតខែលការពារស្តេចពីការវាយសម្រុក។ នេះជាយុទ្ធសាស្ត្រមានតុល្យភាពបំផុត និងពេញនិយមបំផុត។
+                      </p>
+                      <div className="text-[9px] text-amber-500/90 font-mono bg-slate-950/50 p-1.5 rounded-lg border border-amber-500/10">
+                        <strong>🐾 របៀបដើរ (How to Walk):</strong><br />
+                        ១. រុញត្រី e3 ➔ e4<br />
+                        ២. រុញត្រី d3 ➔ d4 (គ្រប់គ្រងកណ្តាលក្តារ)<br />
+                        ៣. ឡើងសេះ b1 ➔ c3<br />
+                        ៤. ឡើងសេះ g1 ➔ f3
                       </div>
-                    );
-                  })}
-                  {history.length === 0 && (
-                    <div className="text-slate-500 text-center py-10 italic">No moves logged yet.</div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
+                    </div>
 
-          {/* TAB 2: Tutorial Academy Panel */}
-          {activeTab === 'academy' && (
-            <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-5 shadow-2xl flex flex-col backdrop-blur-md space-y-4">
-              <h2 className="text-lg font-bold text-amber-400 border-b border-amber-500/20 pb-2">
-                សាលាបណ្តុះបណ្តាលអុកចត្រង្គ 🎓
-              </h2>
-              
-              {/* Academy Sub-tabs */}
-              <div className="grid grid-cols-2 gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                <button 
-                  onClick={() => setAcademySubTab('challenges')}
-                  className={`py-1 text-[10px] font-bold rounded-lg transition-all ${
-                    academySubTab === 'challenges' ? 'bg-amber-400 text-slate-950' : 'text-slate-405 hover:text-white'
-                  }`}
-                >
-                  របៀបដើរ (Tutorials)
-                </button>
-                <button 
-                  onClick={() => setAcademySubTab('strategies')}
-                  className={`py-1 text-[10px] font-bold rounded-lg transition-all ${
-                    academySubTab === 'strategies' ? 'bg-amber-400 text-slate-950' : 'text-slate-405 hover:text-white'
-                  }`}
-                >
-                  យុទ្ធសាស្ត្រឈ្នះ (Setups)
-                </button>
-              </div>
+                    {/* Strategy 2: Sleeping Tiger */}
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 space-y-1.5">
+                      <h3 className="text-xs font-bold text-amber-400">២. ក្បួនខ្លាដេក ឬខ្លាពួន (Sleeping Tiger)</h3>
+                      <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
+                        អភិវឌ្ឍសេះចំហៀង (សេះម្ខាងឡើងទៅ c3 ឬ f3 និងសេះម្ខាងទៀតអភិវឌ្ឍទៅ e3 ឬ d3)។ វាបង្កើតប្រព័ន្ធការពារមិនស៊ីមេទ្រី ងាយស្រួលឆ្មក់វាយប្រហារ AI ឱ្យបាក់ជំហរ។
+                      </p>
+                      <div className="text-[9px] text-amber-500/90 font-mono bg-slate-950/50 p-1.5 rounded-lg border border-amber-500/10">
+                        <strong>🐾 របៀបដើរ (How to Walk):</strong><br />
+                        ១. រុញត្រី e3 ➔ e4<br />
+                        ២. ឡើងសេះ b1 ➔ c3<br />
+                        ៣. អភិវឌ្ឍនាង d1 ➔ e2<br />
+                        ៤. ឡើងសេះ g1 ➔ e3 (លោតទៅក្រោយនាង ដើម្បីត្រៀមលោតឆ្មក់ទៅមុខ)
+                      </div>
+                    </div>
 
-              {academySubTab === 'challenges' ? (
-                <>
-                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                    សិក្សាអំពីច្បាប់ និងរបៀបលេងអុកចត្រង្គខ្មែរជំហានម្តងៗ ជាមួយបញ្ហាប្រឈមជាក់ស្តែង។ ចុចលើមេរៀនខាងក្រោមដើម្បីអនុវត្ត!
+                    {/* Strategy 3: Flower */}
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 space-y-1.5">
+                      <h3 className="text-xs font-bold text-amber-400">៣. ក្បួនផ្ការីក (Flower Formation)</h3>
+                      <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
+                        រៀបចំបណ្តាញកូនត្រីជាលក្ខណៈអង្កត់ទ្រូងការពារគ្នាទៅវិញទៅមក។ វាជួយបិទទ្វារមិនឱ្យសេះគូប្រកួតលោតចូលមកជិតស្តេចបានឡើយ និងត្រៀមរុញកូនត្រីឡើងបុណ្យ។
+                      </p>
+                      <div className="text-[9px] text-amber-500/90 font-mono bg-slate-950/50 p-1.5 rounded-lg border border-amber-500/10">
+                        <strong>🐾 របៀបដើរ (How to Walk):</strong><br />
+                        ១. រុញត្រី e3 ➔ e4 និង d3 ➔ d4 (បង្កើតទម្រង់កណ្តាល)<br />
+                        ២. រុញត្រី c3 ➔ c4 និង f3 ➔ f4 (បង្កើតរបាំងអង្កត់ទ្រូង)<br />
+                        ៣. ត្រៀមរុញកូនត្រីចុងក្រោយណាមួយឡើងទៅមុខដើម្បីយក ត្រីកើត
+                      </div>
+                    </div>
+
+                    {/* Strategy 4: Active Rooks */}
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 space-y-1.5">
+                      <h3 className="text-xs font-bold text-amber-400">៤. ក្បួនទូកចម្បាំង (Active Rook Control)</h3>
+                      <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
+                        បើកផ្លូវឱ្យទូកអភិវឌ្ឍយ៉ាងលឿនតាមជួរឈរចំហ។ ទូកគឺជាកម្លាំងវាយលុកដ៏ខ្លាំងបំផុតក្នុងអុកចត្រង្គ ដូច្នេះការគ្រប់គ្រងផ្លូវបើកទូលាយគឺជាសោរឈ្នះ។
+                      </p>
+                      <div className="text-[9px] text-amber-500/90 font-mono bg-slate-950/50 p-1.5 rounded-lg border border-amber-500/10">
+                        <strong>🐾 របៀបដើរ (How to Walk):</strong><br />
+                        ១. រុញត្រីចំហៀង a3 ➔ a4 (ឬ h3 ➔ h4) ដើម្បីដកគន្លឹះទូក<br />
+                        ២. អភិវឌ្ឍទូក a1 ➔ a3 (ឬ h1 ➔ h3) រួចផ្លាស់ទីវាទៅ c3/d3 ដើម្បីគ្រប់គ្រងជួរឈរ<br />
+                        ៣. ដាក់សម្ពាធលើកូនត្រីគូប្រកួតតាមជួរឈរចំហ
+                      </div>
+                    </div>�ៀនខាងក្រោមដើម្បីអនុវត្ត!
                   </p>
 
                   <div className="space-y-2 flex-1 overflow-y-auto pr-1">
@@ -1047,64 +869,35 @@ export default function Home() {
 
                   <div className="space-y-3 flex-1 overflow-y-auto pr-1">
                     {/* Strategy 1: Horns */}
-                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 space-y-1.5">
-                      <h3 className="text-xs font-bold text-amber-400">១. ក្បួនស្នែង ឬរបាំងស្នែង (Horn Defense)</h3>
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40">
+                      <h3 className="text-xs font-bold text-amber-400 mb-1">១. ក្បួនស្នែង ឬរបាំងស្នែង (Horn Defense)</h3>
                       <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
-                        រុញត្រីនៅ c3 និង f3 ឡើង រួចអភិវឌ្ឍសេះទាំងពីរទៅកាន់ c3 និង f3 ដើម្បីគ្រប់គ្រងកណ្តាលក្តារ និងបង្កើតខែលការពារស្តេច។
+                        អភិវឌ្ឍសេះទាំងពីរឡើងទៅកាន់ការ៉ូ <strong>c3</strong> និង <strong>f3</strong> ដើម្បីគ្រប់គ្រងក្រឡាកណ្តាលក្តារ និងបង្កើតខែលការពារស្តេចពីការវាយសម្រុក។ នេះជាយុទ្ធសាស្ត្រមានតុល្យភាពបំផុត និងពេញនិយមបំផុត។
                       </p>
-                      <div className="text-[9px] text-amber-500/90 font-mono bg-slate-950/50 p-2 rounded-lg border border-amber-500/10 leading-relaxed">
-                        <strong className="text-amber-400">🐾 របៀបដើរ:</strong><br />
-                        ១. រុញត្រី c3 ➔ c4 (បើកផ្លូវសេះឆ្វេង)<br />
-                        ២. រុញត្រី f3 ➔ f4 (បើកផ្លូវសេះស្តាំ)<br />
-                        ៣. ឡើងសេះ b1 ➔ c3<br />
-                        ៤. ឡើងសេះ g1 ➔ f3
-                      </div>
                     </div>
 
                     {/* Strategy 2: Sleeping Tiger */}
-                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 space-y-1.5">
-                      <h3 className="text-xs font-bold text-amber-400">២. ក្បួនខ្លាដេក ឬខ្លាពួន (Sleeping Tiger)</h3>
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40">
+                      <h3 className="text-xs font-bold text-amber-400 mb-1">២. ក្បួនខ្លាដេក ឬខ្លាពួន (Sleeping Tiger)</h3>
                       <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
-                        រុញត្រីម្ខាងបើកផ្លូវ រួចអភិវឌ្ឍសេះមួយទៅមុខ និងសេះមួយទៀតទៅខាង។ បង្កើតប្រព័ន្ធការពារមិនស៊ីមេទ្រី ងាយស្រួលឆ្មក់វាយប្រហារ។
+                        អភិវឌ្ឍសេះចំហៀង (សេះម្ខាងឡើងទៅ c3 ឬ f3 និងសេះម្ខាងទៀតអភិវឌ្ឍទៅ e3 ឬ d3)។ វាបង្កើតប្រព័ន្ធការពារមិនស៊ីមេទ្រី ងាយស្រួលឆ្មក់វាយប្រហារ AI ឱ្យបាក់ជំហរ។
                       </p>
-                      <div className="text-[9px] text-amber-500/90 font-mono bg-slate-950/50 p-2 rounded-lg border border-amber-500/10 leading-relaxed">
-                        <strong className="text-amber-400">🐾 របៀបដើរ:</strong><br />
-                        ១. រុញត្រី d3 ➔ d4 (បើកផ្លូវគោល និងនាង)<br />
-                        ២. រុញត្រី c3 ➔ c4 (បើកផ្លូវសេះ)<br />
-                        ៣. ឡើងសេះ b1 ➔ c3<br />
-                        ៤. លោតនាង d1 ➔ d2 (ការលោតពិសេស ២ការ៉ូ)<br />
-                        ៥. ឡើងសេះ g1 ➔ e2 (សេះម្ខាងពួន)
-                      </div>
                     </div>
 
                     {/* Strategy 3: Flower */}
-                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 space-y-1.5">
-                      <h3 className="text-xs font-bold text-amber-400">៣. ក្បួនផ្ការីក (Flower Formation)</h3>
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40">
+                      <h3 className="text-xs font-bold text-amber-400 mb-1">៣. ក្បួនផ្ការីក (Flower Formation)</h3>
                       <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
-                        រៀបចំកូនត្រីជាលក្ខណៈអង្កត់ទ្រូងការពារគ្នាទៅវិញទៅមក។ វាជួយបិទទ្វារមិនឱ្យសេះគូប្រកួតលោតចូលមកជិតស្តេចបានឡើយ។
+                        រៀបចំបណ្តាញកូនត្រីជាលក្ខណៈអង្កត់ទ្រូងការពារគ្នាទៅវិញទៅមក។ វាជួយបិទទ្វារមិនឱ្យសេះគូប្រកួតលោតចូលមកជិតស្តេចបានឡើយ និងត្រៀមរុញកូនត្រីឡើងបុណ្យ។
                       </p>
-                      <div className="text-[9px] text-amber-500/90 font-mono bg-slate-950/50 p-2 rounded-lg border border-amber-500/10 leading-relaxed">
-                        <strong className="text-amber-400">🐾 របៀបដើរ:</strong><br />
-                        ១. រុញត្រី d3 ➔ d4 និង e3 ➔ e4 (កណ្តាល)<br />
-                        ២. រុញត្រី c3 ➔ c4 និង f3 ➔ f4 (បន្តពង្រីក)<br />
-                        ៣. រក្សាត្រី b3 និង g3 នៅកន្លែង (ការពារចំហៀង)<br />
-                        ៤. ត្រៀមរុញត្រី d4/e4 ទៅមុខដើម្បីយកត្រីកើត
-                      </div>
                     </div>
 
                     {/* Strategy 4: Active Rooks */}
-                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 space-y-1.5">
-                      <h3 className="text-xs font-bold text-amber-400">៤. ក្បួនទូកចម្បាំង (Active Rook Control)</h3>
+                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/40">
+                      <h3 className="text-xs font-bold text-amber-400 mb-1">៤. ក្បួនទូកចម្បាំង (Active Rook Control)</h3>
                       <p className="text-[10px] text-slate-400 leading-relaxed font-sans">
-                        បើកផ្លូវឱ្យទូកអភិវឌ្ឍយ៉ាងលឿនតាមជួរឈរចំហ។ ទូកគឺជាកម្លាំងវាយលុកដ៏ខ្លាំងបំផុតក្នុងអុកចត្រង្គ។
+                        បើកផ្លូវឱ្យទូកអភិវឌ្ឍយ៉ាងលឿនតាមជួរឈរចំហ។ ទូកគឺជាកម្លាំងវាយលុកដ៏ខ្លាំងបំផុតក្នុងអុកចត្រង្គ ដូច្នេះការគ្រប់គ្រងផ្លូវបើកទូលាយគឺជាសោរឈ្នះ។
                       </p>
-                      <div className="text-[9px] text-amber-500/90 font-mono bg-slate-950/50 p-2 rounded-lg border border-amber-500/10 leading-relaxed">
-                        <strong className="text-amber-400">🐾 របៀបដើរ:</strong><br />
-                        ១. រុញត្រី a3 ➔ a4 (បើកផ្លូវទូកឆ្វេង)<br />
-                        ២. អភិវឌ្ឍទូក a1 ➔ a3 (ទូកឡើងទៅជួរទី៣)<br />
-                        ៣. ផ្លាស់ទូកទៅ d3 ឬ e3 (គ្រប់គ្រងកណ្តាល)<br />
-                        ៤. ម្ខាងទៀត: រុញត្រី h3 ➔ h4 រួច ទូក h1 ➔ h3
-                      </div>
                     </div>
                   </div>
                 </>
