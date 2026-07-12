@@ -365,6 +365,11 @@ export default function Home() {
 
     const clickedPiece = board[row][col];
 
+    // Automatically show details of clicked piece in Lesson Mode
+    if (clickedPiece && academyActive) {
+      setActiveGuidePiece(clickedPiece.type);
+    }
+
     if (selectedPos) {
       const isLegal = legalMoves.some(m => m.row === row && m.col === col);
       if (isLegal) {
@@ -1524,44 +1529,57 @@ export default function Home() {
 
                   {/* Active Explanation Card */}
                   {activeGuidePiece && (() => {
-                    const guideData: Record<string, { khmer: string, title: string, move: string, special: string, alert?: string }> = {
+                    const guideData: Record<string, { khmer: string, title: string, move: string, capture: string, special: string, alert?: string }> = {
                       sdaach: {
                         khmer: 'ស្តេច (Sdaach)',
                         title: 'The King',
-                        move: 'Moves 1 square in any direction (vertically, horizontally, or diagonally).',
-                        special: 'On its first move (if not in check and path is clear), it can leap like a Knight (e.g. 2 squares forward and 1 square to the side).',
-                        alert: 'The King can NEVER move into check (attack line of any opponent piece) and cannot leap to escape an active check.'
+                        move: 'Moves 1 square in any direction — vertically, horizontally, or diagonally (8 possible squares).',
+                        capture: 'Captures by moving onto any adjacent enemy square (same 1-square rule). Cannot capture a piece that would leave the King in check.',
+                        special: 'On its very first move only (and not while in check), it can leap like a Knight — 2 squares in one direction and 1 square to the side.',
+                        alert: 'The King can NEVER step onto a square attacked by an enemy piece. It cannot use the Knight-leap to escape an active check.'
                       },
                       neang: {
                         khmer: 'នាង (Neang)',
                         title: 'The Queen',
-                        move: 'Moves 1 square diagonally in any direction.',
-                        special: 'On its first move, it can leap 2 squares straight forward (if the path is clear).',
-                        alert: 'Unlike Western chess, the Queen is a short-range defender and does not sweep across the board.'
+                        move: 'Moves 1 square diagonally in any of 4 directions.',
+                        capture: 'Captures by stepping diagonally onto an enemy square. Short range — it can only capture adjacent diagonal pieces.',
+                        special: 'On its very first move only, it can leap 2 squares straight forward to land on or jump over a friendly piece (cannot capture on the leap).',
+                        alert: 'Unlike Western chess, the Ouk Queen does NOT sweep across the board. It is a short-range piece.'
                       },
                       koul: {
                         khmer: 'គោល (Koul)',
                         title: 'The Bishop',
-                        move: 'Moves 1 square diagonally in any direction OR 1 square straight forward (5 directions total).',
-                        special: 'Excellent for blocking enemy files or establishing strong defensive chains behind pawns.'
+                        move: 'Moves 1 square diagonally in any of 4 directions, OR 1 square straight forward — 5 directions total.',
+                        capture: 'Captures by landing on an adjacent enemy square in any of its 5 movement directions (4 diagonals + 1 forward).',
+                        special: 'The forward-move option makes the Bishop stronger than its Western counterpart for pushing through pawn chains.'
                       },
                       sesh: {
                         khmer: 'សេះ (Sesh)',
                         title: 'The Knight',
-                        move: 'Moves exactly like a Western chess knight in an L-shape (2 squares in one direction, 1 square perpendicular).',
-                        special: 'Can jump over other pieces on the board. Excellent for launching early attacks or establishing the Horn Defense.'
+                        move: 'Moves in an L-shape: 2 squares in one direction then 1 square perpendicular — exactly 8 possible landing squares.',
+                        capture: 'Captures by landing its L-move directly on an enemy piece. It jumps over any pieces in between — they do not block it.',
+                        special: 'The only piece that can jump over other pieces. Very powerful in the opening for establishing the Horn Defense formation.'
                       },
                       touk: {
                         khmer: 'ទូក (Touk)',
                         title: 'The Rook',
-                        move: 'Moves any number of squares vertically or horizontally (identical to a Western rook).',
-                        special: 'The strongest piece for endgame attacks and controlling open files.'
+                        move: 'Slides any number of squares vertically or horizontally, as long as the path is clear.',
+                        capture: 'Captures the first enemy piece it encounters along its rank or file. It cannot jump over pieces — blocked by any piece in its path.',
+                        special: 'The most powerful piece for endgame dominance. Controls entire ranks and files at once.'
                       },
                       trey: {
                         khmer: 'ត្រី (Trey)',
                         title: 'The Pawn',
-                        move: 'Moves 1 square straight forward (no 2-square initial push like Western chess). Captures 1 square diagonally forward.',
-                        special: 'Automatically promotes to Trey Kaet (behaves exactly like a Queen) when it reaches the opponent\'s starting pawn line (6th rank/row).'
+                        move: 'Moves 1 square straight forward only. Cannot move 2 squares on its first move (unlike Western chess).',
+                        capture: 'Captures 1 square diagonally forward (left-forward or right-forward). It CANNOT capture straight ahead.',
+                        special: 'Promotes to Trey Kaet (ត្រីកើត) when it reaches the opponent\'s pawn starting rank (row 6 for White). Trey Kaet moves just like the Queen.'
+                      },
+                      trey_kaet: {
+                        khmer: 'ត្រីកើត (Trey Kaet)',
+                        title: 'Promoted Pawn',
+                        move: 'Moves exactly like the Queen (Neang) — 1 square diagonally in any of 4 directions.',
+                        capture: 'Captures by stepping diagonally onto an adjacent enemy square — same as the Queen.',
+                        special: 'A Trey that reaches the opponent\'s starting pawn rank automatically becomes Trey Kaet for the rest of the game.'
                       }
                     };
 
@@ -1569,31 +1587,46 @@ export default function Home() {
                     if (!data) return null;
 
                     return (
-                      <div className="bg-slate-900 border border-amber-500/20 rounded-xl p-3.5 space-y-2.5 animate-fadeIn text-xs leading-relaxed">
-                        <div className="flex justify-between items-center border-b border-slate-800 pb-1.5">
-                          <strong className="text-amber-400 font-bold">{data.khmer} — {data.title}</strong>
+                      <div className="bg-slate-900 border border-amber-500/30 rounded-xl p-3.5 space-y-2 animate-fadeIn text-xs leading-relaxed">
+                        {/* Header: icon + name */}
+                        <div className="flex items-center gap-2.5 border-b border-slate-800 pb-2">
+                          <div className="w-8 h-8 flex-shrink-0">
+                            <PieceIcon type={activeGuidePiece as any} color="w" theme={pieceTheme} />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-amber-400 font-black text-sm leading-tight">{data.khmer}</div>
+                            <div className="text-slate-400 text-[10px]">{data.title}</div>
+                          </div>
                           <button 
                             type="button"
                             onClick={() => setActiveGuidePiece(null)} 
-                            className="text-[9px] text-slate-500 hover:text-slate-300 font-bold"
+                            className="text-[10px] text-slate-500 hover:text-white font-black px-1.5 py-0.5 rounded hover:bg-slate-800 transition-all"
                           >
-                            Close ×
+                            ✕
                           </button>
                         </div>
                         
-                        <div className="space-y-1.5 text-slate-300 font-sans">
-                          <div>
-                            <span className="text-amber-500/80 font-black text-[9px] uppercase tracking-wider block">Standard Move:</span>
-                            <p className="mt-0.5">{data.move}</p>
+                        <div className="space-y-2 text-slate-300 font-sans">
+                          {/* Movement */}
+                          <div className="bg-slate-800/50 p-2 rounded-lg">
+                            <span className="text-amber-400 font-black text-[9px] uppercase tracking-widest flex items-center gap-1 mb-1">♟ Movement</span>
+                            <p className="text-slate-200 text-[11px] leading-snug">{data.move}</p>
                           </div>
                           
-                          <div>
-                            <span className="text-emerald-400/80 font-black text-[9px] uppercase tracking-wider block">Special Rule / Skill:</span>
-                            <p className="mt-0.5">{data.special}</p>
+                          {/* Capture Rule */}
+                          <div className="bg-rose-950/30 border border-rose-500/20 p-2 rounded-lg">
+                            <span className="text-rose-400 font-black text-[9px] uppercase tracking-widest flex items-center gap-1 mb-1">⚔ How it Captures</span>
+                            <p className="text-slate-200 text-[11px] leading-snug">{data.capture}</p>
+                          </div>
+
+                          {/* Special Rule */}
+                          <div className="bg-emerald-950/30 border border-emerald-500/20 p-2 rounded-lg">
+                            <span className="text-emerald-400 font-black text-[9px] uppercase tracking-widest flex items-center gap-1 mb-1">★ Special Skill</span>
+                            <p className="text-slate-200 text-[11px] leading-snug">{data.special}</p>
                           </div>
 
                           {data.alert && (
-                            <div className="bg-red-950/20 border border-red-500/20 text-red-400/90 p-2 rounded-lg text-[10px] mt-1 italic leading-relaxed">
+                            <div className="bg-red-950/30 border border-red-500/30 text-red-300 p-2 rounded-lg text-[10px] italic leading-relaxed">
                               ⚠️ {data.alert}
                             </div>
                           )}
