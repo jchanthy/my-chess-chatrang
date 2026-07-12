@@ -74,6 +74,7 @@ export default function Home() {
   const [positionHistory, setPositionHistory] = useState<string[]>([]);
   const [academySubTab, setAcademySubTab] = useState<'challenges' | 'strategies'>('challenges');
   const [activeGuidePiece, setActiveGuidePiece] = useState<PieceType | null>(null);
+  const [lesson0Slide, setLesson0Slide] = useState<number>(0);
 
   // Endgame counting rule
   const [countingState, setCountingState] = useState<CountingState>({
@@ -1218,8 +1219,127 @@ export default function Home() {
           )}
         </div>
 
-        {/* Center: 8x8 Board Container */}
+        {/* Center: 8x8 Board Container OR Lesson 0 Slideshow */}
         <div className="lg:col-span-6 lg:sticky lg:top-4 self-start flex flex-col items-center lg:items-center justify-center w-full max-w-[850px] mx-auto order-1 lg:order-none">
+
+          {/* ── Lesson 0: History Slideshow ── */}
+          {academyActive && currentChapterIndex === 0 ? (() => {
+            const slides = [
+              {
+                img: '/lesson0_angkor_wat.png',
+                tag: 'Introduction',
+                title: 'What is Ouk Chatrang?',
+                titleKh: 'អ្វីទៅជាអុកចត្រង្គ?',
+                body: "Ouk Chatrang (អុកចត្រង្គ) is Cambodia's traditional chess game, played for over a thousand years. Like all chess variants, it is a two-player strategy board game of war — each side controls an army of six piece types with the goal of checkmating the enemy King. But Ouk Chatrang has its own unique rules, rhythms, and soul that set it apart from Western chess and make it distinctly Khmer.",
+                accent: 'from-amber-600 to-orange-500'
+              },
+              {
+                img: '/lesson0_history_timeline.png',
+                tag: 'Origins',
+                title: 'From Chaturanga to the Khmer Empire',
+                titleKh: 'ចាប់ពីចតុរង្គដល់ចក្រភពខ្មែរ',
+                body: "Chess was born in India around 600 AD as Chaturanga (Sanskrit: 'four divisions of an army'). As the Khmer Empire rose to power, this game traveled along trade and cultural routes to reach Cambodia. By the 11th century, evidence of Ouk Chatrang existed in stone carvings on the walls of Angkor Wat — one of the oldest continuous traditions of chess on earth.",
+                accent: 'from-yellow-500 to-amber-600'
+              },
+              {
+                img: '/lesson0_southeast_asia_map.png',
+                tag: 'The Chess Family',
+                title: 'Cousins Across Southeast Asia',
+                titleKh: 'ប្អូនជីដូននៃអាស៊ីអាគ្នេយ៍',
+                body: "Ouk Chatrang belongs to a family of chess variants that spread from India across Southeast Asia:\n• 🇮🇳 India → Chaturanga (ancestor of all chess)\n• 🇰🇭 Cambodia → Ouk Chatrang (this game)\n• 🇹🇭 Thailand → Makruk (very similar rules)\n• 🇲🇲 Myanmar → Sittuyin\n• 🇱🇦 Laos → Mak Houk\n\nOf these, Ouk Chatrang and Makruk are the closest cousins — sharing similar piece movements and the distinctive 'Met' (Queen) first-move jump.",
+                accent: 'from-emerald-500 to-teal-600'
+              },
+              {
+                img: '/lesson0_khmer_chess_pieces.png',
+                tag: 'Unique Rules',
+                title: "Ouk Chatrang's Special First Moves",
+                titleKh: 'ការដើរពិសេសសម្រាប់ការចាប់ផ្តើម',
+                body: "What makes Ouk Chatrang unique are two special first-move rules:\n\n♔ King (Sdaach): On its very first move only, the King may leap like a Knight — jumping in an L-shape to a square it could never normally reach. This gives the King an early escape route.\n\n♕ Queen (Met/Neang): On its very first move only, the Queen may leap two squares straight forward, jumping over any piece in its path. This is not a capture — it is a pure leap to accelerate the Queen's development.",
+                accent: 'from-violet-500 to-purple-600'
+              },
+              {
+                img: '/lesson0_people_playing.png',
+                tag: 'Living Heritage',
+                title: 'A Game Kept Alive Through Generations',
+                titleKh: 'ល្បែងដែលរស់នៅតាមរយៈជំនាន់',
+                body: "Through war, colonization, and the devastation of the Khmer Rouge era, Ouk Chatrang survived because ordinary Cambodians kept playing it — in villages, markets, temples, and family courtyards. Today it is recognized as a national cultural heritage game. Tournaments are held across Cambodia, and efforts are underway to teach younger generations this ancient art.\n\nYou are now part of that living tradition. 🙏",
+                accent: 'from-rose-500 to-pink-600'
+              }
+            ];
+            const slide = slides[lesson0Slide];
+            const isLast = lesson0Slide === slides.length - 1;
+            return (
+              <div className="w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 flex flex-col" style={{ minHeight: '520px' }}>
+                {/* Image */}
+                <div className="relative w-full flex-shrink-0" style={{ height: '260px' }}>
+                  <img
+                    key={slide.img}
+                    src={slide.img}
+                    alt={slide.title}
+                    className="w-full h-full object-cover"
+                    style={{ transition: 'opacity 0.4s' }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+                  {/* Tag pill */}
+                  <span className={`absolute top-4 left-4 bg-gradient-to-r ${slide.accent} text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg`}>
+                    {slide.tag}
+                  </span>
+                  {/* Slide counter */}
+                  <span className="absolute top-4 right-4 bg-slate-950/70 backdrop-blur text-slate-300 text-[10px] font-bold px-2.5 py-1 rounded-full border border-slate-700">
+                    {lesson0Slide + 1} / {slides.length}
+                  </span>
+                </div>
+
+                {/* Text content */}
+                <div className="flex-1 p-5 flex flex-col gap-3 overflow-y-auto">
+                  <div>
+                    <h2 className="text-xl font-black text-white leading-tight">{slide.title}</h2>
+                    <p className={`text-sm font-semibold bg-gradient-to-r ${slide.accent} bg-clip-text text-transparent`}>{slide.titleKh}</p>
+                  </div>
+                  <p className="text-slate-300 text-sm leading-relaxed font-sans whitespace-pre-line flex-1">{slide.body}</p>
+
+                  {/* Navigation */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-800 mt-auto">
+                    <button
+                      onClick={() => setLesson0Slide(s => Math.max(0, s - 1))}
+                      disabled={lesson0Slide === 0}
+                      className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      ← Previous
+                    </button>
+
+                    {/* Dot indicators */}
+                    <div className="flex items-center gap-1.5">
+                      {slides.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setLesson0Slide(i)}
+                          className={`rounded-full transition-all ${i === lesson0Slide ? 'w-4 h-2 bg-amber-400' : 'w-2 h-2 bg-slate-700 hover:bg-slate-500'}`}
+                        />
+                      ))}
+                    </div>
+
+                    {isLast ? (
+                      <button
+                        onClick={() => { setChapterSuccess(true); }}
+                        className="px-5 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-sm font-black transition-all shadow-lg shadow-amber-500/30"
+                      >
+                        Complete Lesson ✓
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setLesson0Slide(s => Math.min(slides.length - 1, s + 1))}
+                        className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-black transition-all"
+                      >
+                        Next →
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })() : (
+          <>
           {/* Coordinates Layout Wrapper */}
           <div className="grid grid-cols-[auto_1fr_auto] grid-rows-[auto_1fr_auto] items-center w-full max-w-[min(100%,90vh)] aspect-square select-none">
             {/* Top row */}
@@ -1395,6 +1515,8 @@ export default function Home() {
             </div>
             <div></div>
           </div>
+          </>
+          )}
         </div>
         
             {/* Right Side Panels - Stacked */}
@@ -1421,7 +1543,55 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Piece Info Card - pinned at top, shown when a piece is clicked */}
+              {/* Lesson 0: Slide Outline in Sidebar */}
+              {currentChapterIndex === 0 ? (
+                <div className="space-y-3 flex-grow overflow-y-auto pr-1">
+                  <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/50">
+                    <h3 className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">📜 Lesson Overview</h3>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">Read each slide on the left. Use Next → to advance through the 5-part history of Ouk Chatrang.</p>
+                  </div>
+                  {[
+                    { n: 1, title: 'What is Ouk Chatrang?', icon: '🏛' },
+                    { n: 2, title: 'Origins from Chaturanga', icon: '📜' },
+                    { n: 3, title: 'SE Asian Chess Family', icon: '🗺' },
+                    { n: 4, title: "Special First-Move Rules", icon: '♔' },
+                    { n: 5, title: 'Living Cultural Heritage', icon: '🙏' },
+                  ].map((s) => {
+                    const done = lesson0Slide + 1 > s.n;
+                    const active = lesson0Slide + 1 === s.n;
+                    return (
+                      <button
+                        key={s.n}
+                        type="button"
+                        onClick={() => setLesson0Slide(s.n - 1)}
+                        className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all text-xs font-medium ${
+                          done ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400' :
+                          active ? 'bg-amber-400/10 border-amber-500/40 text-amber-300 ring-1 ring-amber-500/20 shadow-md animate-pulse' :
+                          'bg-slate-900/20 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 border ${
+                          done ? 'bg-emerald-500 text-slate-950 border-emerald-500' :
+                          active ? 'bg-amber-400 text-slate-950 border-amber-400' :
+                          'border-slate-700 text-slate-600'
+                        }`}>
+                          {done ? '✓' : s.n}
+                        </span>
+                        <span className="text-base">{s.icon}</span>
+                        <span className="flex-1 leading-tight">{s.title}</span>
+                      </button>
+                    );
+                  })}
+                  {chapterSuccess && (
+                    <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 text-center space-y-1">
+                      <div className="text-emerald-400 font-black text-sm">🏆 Lesson Complete!</div>
+                      <div className="text-slate-400 text-[11px]">Proceed to Lesson 1 to learn the board, pieces, and moves.</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+
               {activeGuidePiece && (() => {
                 const guideDataTop: Record<string, { khmer: string, title: string, move: string, capture: string, special: string, alert?: string }> = {
                   sdaach: { khmer: 'ស្តេច (Sdaach)', title: 'The King', move: 'Moves 1 square in any direction (8 squares possible).', capture: 'Captures by moving onto any adjacent enemy square. Cannot capture into check.', special: 'On its very first move only (not in check), it can leap like a Knight.', alert: 'Can NEVER step onto a square attacked by an enemy.' },
@@ -1568,8 +1738,10 @@ export default function Home() {
                       </button>
                     ))}
                   </div>
+                  </div>
                 </div>
-              </div>
+              </>
+              )}
             </div>
           ) : (
             /* Regular Side Panels (Playing info, moves history, or academy lessons catalog) */
