@@ -1467,18 +1467,18 @@ export default function Home() {
                   <svg
                     key={`arrow-${from.row}-${from.col}-${to.row}-${to.col}-${history.length}`}
                     viewBox="0 0 100 100"
-                    className="absolute inset-0 w-full h-full pointer-events-none z-40"
-                    style={{ filter: `drop-shadow(0 0 4px ${shadowColor})` }}
+                    className="absolute inset-0 w-full h-full pointer-events-none z-40 animate-pulse"
+                    style={{ filter: `drop-shadow(0 0 6px ${shadowColor})` }}
                   >
                     <defs>
-                      <marker id="arrowhead" markerWidth="5" markerHeight="5" refX="2.5" refY="1.5" orient="auto">
-                        <polygon points="0 3, 5 1.5, 0 0" fill={arrowColor} className="guide-arrow-head" />
+                      <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="2" orient="auto">
+                        <polygon points="0 4, 8 2, 0 0" fill={arrowColor} className="guide-arrow-head" />
                       </marker>
                     </defs>
                     <line
                       x1={sx} y1={sy} x2={ex} y2={ey}
                       stroke={arrowColor}
-                      strokeWidth="1.6"
+                      strokeWidth="3.2"
                       strokeLinecap="round"
                       markerEnd="url(#arrowhead)"
                       className="guide-arrow-path"
@@ -1487,7 +1487,22 @@ export default function Home() {
                 );
               })()}
             </div>
-                </div>
+
+            {/* Floating Tutorial Instruction Banner directly on the Board */}
+            {academyActive && !chapterSuccess && (
+              <div className="absolute bottom-4 left-4 right-4 z-50 bg-slate-950/95 border border-emerald-500/40 backdrop-blur-md px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-3 border-l-4 border-l-emerald-500 animate-bounce">
+                <span className="flex h-2.5 w-2.5 relative flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <p className="text-xs md:text-sm font-bold text-amber-300 select-none leading-relaxed">
+                  {typeof tutorialChapters[currentChapterIndex].instructions === 'function'
+                    ? (tutorialChapters[currentChapterIndex].instructions as any)(history)
+                    : tutorialChapters[currentChapterIndex].instructions}
+                </p>
+              </div>
+            )}
+          </div>
               );
             })()}
 
