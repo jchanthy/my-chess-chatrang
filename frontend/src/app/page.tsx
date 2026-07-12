@@ -1223,9 +1223,9 @@ export default function Home() {
         {/* Center: 8x8 Board Container OR Lesson 0 Slideshow */}
         <div className="lg:col-span-6 lg:sticky lg:top-4 self-start flex flex-col items-center lg:items-center justify-center w-full max-w-[850px] mx-auto order-1 lg:order-none">
 
-          {/* ── Lesson 0: History Slideshow ── */}
+          {/* ── Lesson 0: History Scrollable Guide ── */}
           {academyActive && currentChapterIndex === 0 ? (() => {
-            const slides = [
+            const articles = [
               {
                 img: '/lesson0_angkor_wat.png',
                 tag: 'Introduction',
@@ -1267,75 +1267,56 @@ export default function Home() {
                 accent: 'from-rose-500 to-pink-600'
               }
             ];
-            const slide = slides[lesson0Slide];
-            const isLast = lesson0Slide === slides.length - 1;
             return (
-              <div className="w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 flex flex-col" style={{ minHeight: '520px' }}>
-                {/* Image */}
-                <div className="relative w-full flex-shrink-0" style={{ height: '260px' }}>
-                  <img
-                    key={slide.img}
-                    src={slide.img}
-                    alt={slide.title}
-                    className="w-full h-full object-cover object-center"
-                    style={{ transition: 'opacity 0.4s' }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
-                  {/* Tag pill */}
-                  <span className={`absolute top-4 left-4 bg-gradient-to-r ${slide.accent} text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg`}>
-                    {slide.tag}
-                  </span>
-                  {/* Slide counter */}
-                  <span className="absolute top-4 right-4 bg-slate-950/70 backdrop-blur text-slate-300 text-[10px] font-bold px-2.5 py-1 rounded-full border border-slate-700">
-                    {lesson0Slide + 1} / {slides.length}
-                  </span>
+              <div className="w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 flex flex-col h-[650px] max-h-[85vh]">
+                {/* Scrollable Contents */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-10 pr-2 scrollbar-thin">
+                  <div className="border-b border-slate-800 pb-3 mb-2 select-none">
+                    <span className="bg-amber-400 text-slate-950 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">
+                      LESSON 0 / មេរៀនទី ១
+                    </span>
+                    <h1 className="text-2xl font-black text-white mt-2">ប្រវត្តិសាស្ត្រអុកចត្រង្គខ្មែរ (History of Ouk Chatrang)</h1>
+                    <p className="text-slate-400 text-xs mt-1">សូមអូសចុះក្រោមដើម្បីអានប្រវត្តិលម្អិត រួចចុច 'មេរៀនបន្ទាប់' នៅខាងក្រោមបង្អស់</p>
+                  </div>
+
+                  {articles.map((art, idx) => (
+                    <div key={idx} className="flex flex-col gap-4 border-b border-slate-900 pb-8 last:border-b-0 last:pb-2">
+                      <div className="relative w-full h-[220px] rounded-xl overflow-hidden shadow-lg border border-slate-800/80">
+                        <img src={art.img} alt={art.title} className="w-full h-full object-cover object-center" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent" />
+                        <span className={`absolute top-3 left-3 bg-gradient-to-r ${art.accent} text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow-lg`}>
+                          {art.tag}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        <h2 className="text-lg font-black text-white leading-tight">{idx + 1}. {art.title}</h2>
+                        <p className={`text-xs font-semibold bg-gradient-to-r ${art.accent} bg-clip-text text-transparent`}>{art.titleKh}</p>
+                      </div>
+                      <p className="text-slate-300 text-sm leading-relaxed font-sans whitespace-pre-line">{art.body}</p>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Text content */}
-                <div className="flex-1 p-5 flex flex-col gap-3 overflow-y-auto">
-                  <div>
-                    <h2 className="text-xl font-black text-white leading-tight">{slide.title}</h2>
-                    <p className={`text-sm font-semibold bg-gradient-to-r ${slide.accent} bg-clip-text text-transparent`}>{slide.titleKh}</p>
-                  </div>
-                  <p className="text-slate-300 text-sm leading-relaxed font-sans whitespace-pre-line flex-1">{slide.body}</p>
+                {/* Fixed bottom navigation */}
+                <div className="flex items-center justify-between p-4 border-t border-slate-900 bg-slate-950 flex-shrink-0 select-none">
+                  <button
+                    onClick={() => setAcademyActive(false)}
+                    className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-bold transition-all border border-slate-800/80"
+                  >
+                    🏠 Academy Menu
+                  </button>
 
-                  {/* Navigation */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800 mt-auto">
-                    <button
-                      onClick={() => setLesson0Slide(s => Math.max(0, s - 1))}
-                      disabled={lesson0Slide === 0}
-                      className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      ← Previous
-                    </button>
-
-                    {/* Dot indicators */}
-                    <div className="flex items-center gap-1.5">
-                      {slides.map((_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setLesson0Slide(i)}
-                          className={`rounded-full transition-all ${i === lesson0Slide ? 'w-4 h-2 bg-amber-400' : 'w-2 h-2 bg-slate-700 hover:bg-slate-500'}`}
-                        />
-                      ))}
-                    </div>
-
-                    {isLast ? (
-                      <button
-                        onClick={() => { setChapterSuccess(true); }}
-                        className="px-5 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-sm font-black transition-all shadow-lg shadow-amber-500/30"
-                      >
-                        Complete Lesson ✓
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setLesson0Slide(s => Math.min(slides.length - 1, s + 1))}
-                        className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-black transition-all"
-                      >
-                        Next →
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    onClick={() => {
+                      setCurrentChapterIndex(1);
+                      setChapterSuccess(false);
+                      setLesson1Slide(0);
+                      // Scroll sidebar or reset view details
+                    }}
+                    className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black transition-all shadow-lg shadow-amber-500/20"
+                  >
+                    Next Lesson: How to Move →
+                  </button>
                 </div>
               </div>
             );
@@ -1390,35 +1371,57 @@ export default function Home() {
                 accent: 'from-amber-500 to-yellow-400'
               }
             ];
-            const slide1 = slides1[lesson1Slide];
-            const isLast1 = lesson1Slide === slides1.length - 1;
             return (
-              <div className="w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 flex flex-col" style={{ minHeight: '520px' }}>
-                <div className="relative w-full flex-shrink-0" style={{ height: '260px' }}>
-                  <img key={slide1.img} src={slide1.img} alt={slide1.title} className="w-full h-full object-cover object-center" style={{ transition: 'opacity 0.4s' }} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
-                  <span className={`absolute top-4 left-4 bg-gradient-to-r ${slide1.accent} text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg`}>{slide1.tag}</span>
-                  <span className="absolute top-4 right-4 bg-slate-950/70 backdrop-blur text-slate-300 text-[10px] font-bold px-2.5 py-1 rounded-full border border-slate-700">{lesson1Slide + 1} / {slides1.length}</span>
-                </div>
-                <div className="flex-1 p-5 flex flex-col gap-3 overflow-y-auto">
-                  <div>
-                    <h2 className="text-xl font-black text-white leading-tight">{slide1.title}</h2>
-                    <p className={`text-sm font-semibold bg-gradient-to-r ${slide1.accent} bg-clip-text text-transparent`}>{slide1.titleKh}</p>
+              <div className="w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 flex flex-col h-[650px] max-h-[85vh]">
+                {/* Scrollable Contents */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-10 pr-2 scrollbar-thin">
+                  <div className="border-b border-slate-800 pb-3 mb-2 select-none">
+                    <span className="bg-emerald-500 text-slate-950 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">
+                      LESSON 1 / មេរៀនទី ២
+                    </span>
+                    <h1 className="text-2xl font-black text-white mt-2">របៀបដើរ និងច្បាប់កូនអុកទាំងអស់ (Piece Moves & Rules)</h1>
+                    <p className="text-slate-400 text-xs mt-1">សូមអូសចុះក្រោមដើម្បីសិក្សាអំពីក្តារ និងកូនអុក រួចចុច 'បញ្ចប់មេរៀន' ដើម្បីបើកសាកល្បងដើរ</p>
                   </div>
-                  <p className="text-slate-300 text-sm leading-relaxed font-sans whitespace-pre-line flex-1">{slide1.body}</p>
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800 mt-auto">
-                    <button onClick={() => setLesson1Slide(s => Math.max(0, s - 1))} disabled={lesson1Slide === 0} className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed">← Previous</button>
-                    <div className="flex items-center gap-1.5">
-                      {slides1.map((_, i) => (
-                        <button key={i} onClick={() => setLesson1Slide(i)} className={`rounded-full transition-all ${i === lesson1Slide ? 'w-4 h-2 bg-amber-400' : 'w-2 h-2 bg-slate-700 hover:bg-slate-500'}`} />
-                      ))}
+
+                  {slides1.map((art, idx) => (
+                    <div key={idx} className="flex flex-col gap-4 border-b border-slate-900 pb-8 last:border-b-0 last:pb-2">
+                      <div className="relative w-full h-[220px] rounded-xl overflow-hidden shadow-lg border border-slate-800/80">
+                        <img src={art.img} alt={art.title} className="w-full h-full object-cover object-center" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent" />
+                        <span className={`absolute top-3 left-3 bg-gradient-to-r ${art.accent} text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow-lg`}>
+                          {art.tag}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        <h2 className="text-lg font-black text-white leading-tight">{idx + 1}. {art.title}</h2>
+                        <p className={`text-xs font-semibold bg-gradient-to-r ${art.accent} bg-clip-text text-transparent`}>{art.titleKh}</p>
+                      </div>
+                      <p className="text-slate-300 text-sm leading-relaxed font-sans whitespace-pre-line">{art.body}</p>
                     </div>
-                    {isLast1 ? (
-                      <button onClick={() => setChapterSuccess(true)} className="px-5 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-sm font-black transition-all shadow-lg shadow-amber-500/30">Complete Lesson ✓</button>
-                    ) : (
-                      <button onClick={() => setLesson1Slide(s => Math.min(slides1.length - 1, s + 1))} className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-black transition-all">Next →</button>
-                    )}
-                  </div>
+                  ))}
+                </div>
+
+                {/* Fixed bottom navigation */}
+                <div className="flex items-center justify-between p-4 border-t border-slate-900 bg-slate-950 flex-shrink-0 select-none">
+                  <button
+                    onClick={() => {
+                      setCurrentChapterIndex(0);
+                      setChapterSuccess(false);
+                      setLesson0Slide(0);
+                    }}
+                    className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-bold transition-all border border-slate-800/80"
+                  >
+                    ← Previous Lesson
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setChapterSuccess(true);
+                    }}
+                    className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black transition-all shadow-lg shadow-emerald-500/20"
+                  >
+                    Complete Lesson ✓
+                  </button>
                 </div>
               </div>
             );
