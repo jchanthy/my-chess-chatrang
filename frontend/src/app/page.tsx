@@ -1515,8 +1515,109 @@ export default function Home() {
             {/* Right Side Panels - Stacked */}
             <div className="lg:col-span-3 flex flex-col gap-5 order-3 lg:order-none w-full">
           
-          {/* Sidebar Header with Menu button and Title */}
-          <div className="flex items-center justify-between border-b border-slate-850 pb-4 mb-2 select-none">
+          {academyActive ? (
+            /* Active Lesson Guide Panel */
+            <div className="bg-slate-950/80 border border-emerald-500/20 rounded-2xl p-5 shadow-2xl flex flex-col backdrop-blur-md space-y-4">
+              <div className="border-b border-emerald-500/20 pb-3 flex justify-between items-center select-none">
+                <div>
+                  <span className="bg-emerald-500 text-slate-950 text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider block w-max mb-1">
+                    ACTIVE LESSON / មេរៀនសកម្ម
+                  </span>
+                  <h2 className="text-sm font-black text-amber-400 leading-tight">
+                    {tutorialChapters[currentChapterIndex].title}
+                  </h2>
+                </div>
+                
+                <button 
+                  onClick={() => { setAcademyActive(false); resetGame(); }}
+                  className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-slate-800/80 cursor-pointer whitespace-nowrap"
+                >
+                  ⬅️ Lessons
+                </button>
+              </div>
+
+              {/* Lesson Instructions & Steps List */}
+              <div className="space-y-4 flex-grow overflow-y-auto pr-1">
+                <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-850/80 space-y-1.5">
+                  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">🎯 Lesson Goal</h3>
+                  <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                    {tutorialChapters[currentChapterIndex].description}
+                  </p>
+                </div>
+
+                {/* Steps Checklist */}
+                <div className="space-y-2">
+                  <h3 className="text-[10px] font-bold text-amber-400 uppercase tracking-wider pl-1">🐾 Steps to Follow:</h3>
+                  
+                  {currentChapterIndex === 4 ? (
+                    /* Chapter 5 step list */
+                    <div className="space-y-1.5 font-sans">
+                      {[
+                        { step: 0, text: "Step 1: Push e3 ➔ e4 (Open Queen/Bishop file)" },
+                        { step: 1, text: "Step 2: Push c3 ➔ c4 (Open Left Knight file)" },
+                        { step: 2, text: "Step 3: Develop Left Knight b1 ➔ c3" },
+                        { step: 3, text: "Step 4: Develop Queen e1 ➔ e3 (Jump 2 squares)" },
+                        { step: 4, text: "Step 5: Push f3 ➔ f4 (Open Right Knight file)" },
+                        { step: 5, text: "Step 6: Develop Right Knight g1 ➔ f3" },
+                        { step: 6, text: "Step 7: Develop Left Bishop c1 ➔ d2" },
+                        { step: 7, text: "Step 8: Develop Right Bishop f1 ➔ e2" }
+                      ].map((s) => {
+                        const isDone = history.length > s.step;
+                        const isActive = history.length === s.step;
+                        return (
+                          <div 
+                            key={s.step} 
+                            className={`flex items-center gap-2.5 p-2 rounded-lg border text-xs font-medium transition-all ${
+                              isDone 
+                                ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400' 
+                                : isActive 
+                                  ? 'bg-amber-400/10 border-amber-500/40 text-amber-300 ring-1 ring-amber-500/20 shadow-md shadow-amber-500/5 animate-pulse' 
+                                  : 'bg-slate-900/20 border-slate-900 text-slate-500'
+                            }`}
+                          >
+                            <span className={`h-4.5 w-4.5 rounded-full flex items-center justify-center font-bold text-[9px] border ${
+                              isDone 
+                                ? 'bg-emerald-500 text-slate-950 border-emerald-500' 
+                                : isActive 
+                                  ? 'bg-amber-400 text-slate-950 border-amber-400' 
+                                  : 'border-slate-800 text-slate-600'
+                            }`}>
+                              {isDone ? '✓' : s.step + 1}
+                            </span>
+                            <span className="flex-1">{s.text}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    /* Simple single instruction checklist */
+                    <div className="space-y-1.5 font-sans">
+                      <div className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-xs font-medium ${
+                        chapterSuccess 
+                          ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400' 
+                          : 'bg-amber-400/10 border-amber-500/40 text-amber-300 ring-1 ring-amber-500/20 shadow-md animate-pulse'
+                      }`}>
+                        <span className={`h-4.5 w-4.5 rounded-full flex items-center justify-center font-bold text-[9px] border ${
+                          chapterSuccess ? 'bg-emerald-500 text-slate-950 border-emerald-500' : 'bg-amber-400 text-slate-950 border-amber-400'
+                        }`}>
+                          {chapterSuccess ? '✓' : '1'}
+                        </span>
+                        <span className="flex-1 font-semibold leading-relaxed">
+                          {typeof tutorialChapters[currentChapterIndex].instructions === 'function'
+                            ? (tutorialChapters[currentChapterIndex].instructions as any)(history)
+                            : tutorialChapters[currentChapterIndex].instructions}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Regular Side Panels (Playing info, moves history, or academy lessons catalog) */
+            <>
+              {/* Sidebar Header with Menu button and Title */}
+              <div className="flex items-center justify-between border-b border-slate-850 pb-4 mb-2 select-none">
             <div>
               <h1 className="text-2xl font-bold tracking-wider bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent drop-shadow-md">
                 {activeTab === 'academy' ? 'សាលាបណ្តុះបណ្តាលអុកចត្រង្គ' : 'អុកចត្រង្គ'}
@@ -1728,16 +1829,10 @@ export default function Home() {
                 </>
               )}
 
-              {academyActive && (
-                <button 
-                  onClick={resetGame}
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2 rounded-xl text-xs transition-all"
-                >
-                  ចាកចេញពីរបៀបសិក្សា
-                </button>
-              )}
             </div>
           )}
+        </>
+      )}
         </div>
       </div>
       )
