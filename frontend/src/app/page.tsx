@@ -75,6 +75,7 @@ export default function Home() {
   const [academySubTab, setAcademySubTab] = useState<'challenges' | 'strategies'>('challenges');
   const [activeGuidePiece, setActiveGuidePiece] = useState<PieceType | null>(null);
   const [lesson0Slide, setLesson0Slide] = useState<number>(0);
+  const [lesson1Slide, setLesson1Slide] = useState<number>(0);
 
   // Endgame counting rule
   const [countingState, setCountingState] = useState<CountingState>({
@@ -1276,7 +1277,7 @@ export default function Home() {
                     key={slide.img}
                     src={slide.img}
                     alt={slide.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-center"
                     style={{ transition: 'opacity 0.4s' }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
@@ -1333,6 +1334,89 @@ export default function Home() {
                       >
                         Next →
                       </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })() : academyActive && currentChapterIndex === 1 ? (() => {
+            const slides1 = [
+              {
+                img: '/lesson1_board_coordinates.png',
+                tag: 'The Board',
+                title: 'Reading the Chess Board',
+                titleKh: 'ការអានក្តារអុក',
+                body: "The Ouk Chatrang board is an 8×8 grid of 64 squares.\n\n📐 Files (columns) are labeled A to H, left to right.\n📐 Ranks (rows) are labeled 1 to 8, bottom to top.\n\nEvery square has a unique name formed by its file letter + rank number:\n• Bottom-left corner = a1\n• Top-right corner = h8\n• King starts on = d1 (White) / d8 (Black)\n\n💡 Tip: Say the file (letter) first, then the rank (number). So 'e3' means column E, row 3.",
+                accent: 'from-sky-500 to-blue-600'
+              },
+              {
+                img: '/lesson1_starting_positions.png',
+                tag: 'Starting Setup',
+                title: 'Where Each Piece Begins',
+                titleKh: 'ទីតាំងចាប់ផ្តើមរបស់កូនអុក',
+                body: "Every game of Ouk Chatrang starts from the same fixed position:\n\n🏰 Touk (Rook) — a1 and h1\n🐴 Sesh (Knight) — b1 and g1\n🔷 Koul (Bishop) — c1 and f1\n👑 Sdaach (King) — d1\n👸 Neang (Queen) — e1\n🐟 Trey (Pawn) — a3 through h3 (rank 3, NOT rank 2!)\n\nBlack mirrors the same setup on ranks 6 and 8.\n\n⚠️ Key difference from Western chess: Ouk Chatrang pawns start on rank 3, one row further forward.",
+                accent: 'from-amber-500 to-orange-500'
+              },
+              {
+                img: '/lesson1_pawn_trey.png',
+                tag: 'The Pawn',
+                title: 'Trey (ត្រី) — The Pawn',
+                titleKh: 'ត្រី — របៀបដើរ និងចាប់',
+                body: "The Trey is your front-line soldier — there are 8 of them.\n\n♟ Movement:\nMoves exactly 1 square straight forward. Unlike Western chess, there is NO two-square first move.\n\n⚔️ Capture:\nCaptures 1 square diagonally forward (left-diagonal or right-diagonal). It CANNOT capture straight ahead.\n\n⭐ Promotion:\nWhen a Trey reaches the opponent's pawn starting rank (rank 6 for White), it immediately becomes a Trey Kaet (ត្រីកើត) — which moves exactly like the Queen.",
+                accent: 'from-lime-500 to-green-600'
+              },
+              {
+                img: '/lesson1_major_pieces.png',
+                tag: 'Major Pieces',
+                title: 'Touk, Sesh & Koul',
+                titleKh: 'ទូក — សេះ — គោល',
+                body: "🏰 Touk (Rook)\nSlides any number of squares vertically or horizontally. Captures the first enemy piece in its path. Blocked by any piece. Most powerful for endgame control.\n\n🐴 Sesh (Knight)\nMoves in an L-shape: 2 squares in one direction + 1 square perpendicular. Jumps over all other pieces — nothing can block it. The only piece that leaps!\n\n🔷 Koul (Bishop)\nMoves 1 square diagonally in any of 4 directions, OR 1 square straight forward (5 directions total). This forward option is unique to Ouk Chatrang — it makes the Bishop stronger than its Western counterpart.",
+                accent: 'from-violet-500 to-indigo-600'
+              },
+              {
+                img: '/lesson1_royal_pieces.png',
+                tag: 'Royal Pieces',
+                title: 'Sdaach & Neang — The Royals',
+                titleKh: 'ស្តេច — នាង — ការដើរពិសេស',
+                body: "👑 Sdaach (King)\nNormal move: 1 square in any direction (8 possible squares).\n⭐ First move only: Can leap like a Knight (L-shape) — but only if NOT currently in check. Use this early to position safely!\n⚠️ The King can never move into a square attacked by any enemy piece.\n\n👸 Neang (Queen / Met)\nNormal move: 1 square diagonally in any of 4 directions (short range — NOT like Western chess!).\n⭐ First move only: Can leap 2 squares straight forward, jumping over any piece in its path. This is a pure move — it cannot capture on this leap.",
+                accent: 'from-rose-500 to-pink-600'
+              },
+              {
+                img: '/lesson1_lets_play.png',
+                tag: "You're Ready!",
+                title: "Now Let's Play!",
+                titleKh: 'ដល់ពេលហើយ — សូមលេង!',
+                body: "You now know everything to start your first game of Ouk Chatrang:\n\n✅ How to read the board (files A-H, ranks 1-8)\n✅ Where all pieces start\n✅ How the Trey (Pawn) moves and promotes\n✅ How Touk (Rook), Sesh (Knight) and Koul (Bishop) move\n✅ The special first-move leaps of the King and Queen\n\n🎯 Next Step:\nClick 'Complete Lesson' to unlock the sandbox — then try clicking any piece on the board to see its moves highlighted in real time. The game will show you exactly where you can go!",
+                accent: 'from-amber-500 to-yellow-400'
+              }
+            ];
+            const slide1 = slides1[lesson1Slide];
+            const isLast1 = lesson1Slide === slides1.length - 1;
+            return (
+              <div className="w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 flex flex-col" style={{ minHeight: '520px' }}>
+                <div className="relative w-full flex-shrink-0" style={{ height: '260px' }}>
+                  <img key={slide1.img} src={slide1.img} alt={slide1.title} className="w-full h-full object-cover object-center" style={{ transition: 'opacity 0.4s' }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+                  <span className={`absolute top-4 left-4 bg-gradient-to-r ${slide1.accent} text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg`}>{slide1.tag}</span>
+                  <span className="absolute top-4 right-4 bg-slate-950/70 backdrop-blur text-slate-300 text-[10px] font-bold px-2.5 py-1 rounded-full border border-slate-700">{lesson1Slide + 1} / {slides1.length}</span>
+                </div>
+                <div className="flex-1 p-5 flex flex-col gap-3 overflow-y-auto">
+                  <div>
+                    <h2 className="text-xl font-black text-white leading-tight">{slide1.title}</h2>
+                    <p className={`text-sm font-semibold bg-gradient-to-r ${slide1.accent} bg-clip-text text-transparent`}>{slide1.titleKh}</p>
+                  </div>
+                  <p className="text-slate-300 text-sm leading-relaxed font-sans whitespace-pre-line flex-1">{slide1.body}</p>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-800 mt-auto">
+                    <button onClick={() => setLesson1Slide(s => Math.max(0, s - 1))} disabled={lesson1Slide === 0} className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed">← Previous</button>
+                    <div className="flex items-center gap-1.5">
+                      {slides1.map((_, i) => (
+                        <button key={i} onClick={() => setLesson1Slide(i)} className={`rounded-full transition-all ${i === lesson1Slide ? 'w-4 h-2 bg-amber-400' : 'w-2 h-2 bg-slate-700 hover:bg-slate-500'}`} />
+                      ))}
+                    </div>
+                    {isLast1 ? (
+                      <button onClick={() => setChapterSuccess(true)} className="px-5 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-sm font-black transition-all shadow-lg shadow-amber-500/30">Complete Lesson ✓</button>
+                    ) : (
+                      <button onClick={() => setLesson1Slide(s => Math.min(slides1.length - 1, s + 1))} className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-black transition-all">Next →</button>
                     )}
                   </div>
                 </div>
@@ -1543,7 +1627,7 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Lesson 0: Slide Outline in Sidebar */}
+              {/* Lesson 0 or Lesson 1: Slide Outline in Sidebar */}
               {currentChapterIndex === 0 ? (
                 <div className="space-y-3 flex-grow overflow-y-auto pr-1">
                   <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/50">
@@ -1586,6 +1670,52 @@ export default function Home() {
                     <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 text-center space-y-1">
                       <div className="text-emerald-400 font-black text-sm">🏆 Lesson Complete!</div>
                       <div className="text-slate-400 text-[11px]">Proceed to Lesson 1 to learn the board, pieces, and moves.</div>
+                    </div>
+                  )}
+                </div>
+              ) : currentChapterIndex === 1 ? (
+                <div className="space-y-3 flex-grow overflow-y-auto pr-1">
+                  <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/50">
+                    <h3 className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">📖 Lesson Overview</h3>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">Learn how each piece moves. Use Next → to go through all 6 slides.</p>
+                  </div>
+                  {[
+                    { n: 1, title: 'Reading the Board', icon: '📐' },
+                    { n: 2, title: 'Starting Positions', icon: '♟' },
+                    { n: 3, title: 'Trey (Pawn)', icon: '🐟' },
+                    { n: 4, title: 'Touk, Sesh & Koul', icon: '🏰' },
+                    { n: 5, title: 'King & Queen Special Moves', icon: '👑' },
+                    { n: 6, title: "Let's Play!", icon: '🎯' },
+                  ].map((s) => {
+                    const done = lesson1Slide + 1 > s.n;
+                    const active = lesson1Slide + 1 === s.n;
+                    return (
+                      <button
+                        key={s.n}
+                        type="button"
+                        onClick={() => setLesson1Slide(s.n - 1)}
+                        className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all text-xs font-medium ${
+                          done ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400' :
+                          active ? 'bg-amber-400/10 border-amber-500/40 text-amber-300 ring-1 ring-amber-500/20 shadow-md animate-pulse' :
+                          'bg-slate-900/20 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 border ${
+                          done ? 'bg-emerald-500 text-slate-950 border-emerald-500' :
+                          active ? 'bg-amber-400 text-slate-950 border-amber-400' :
+                          'border-slate-700 text-slate-600'
+                        }`}>
+                          {done ? '✓' : s.n}
+                        </span>
+                        <span className="text-base">{s.icon}</span>
+                        <span className="flex-1 leading-tight">{s.title}</span>
+                      </button>
+                    );
+                  })}
+                  {chapterSuccess && (
+                    <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 text-center space-y-1">
+                      <div className="text-emerald-400 font-black text-sm">🏆 Lesson Complete!</div>
+                      <div className="text-slate-400 text-[11px]">You are ready to play! Start a game from the main menu.</div>
                     </div>
                   )}
                 </div>
