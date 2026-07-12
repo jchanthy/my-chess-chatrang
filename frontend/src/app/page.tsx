@@ -108,7 +108,7 @@ export default function Home() {
     {
       id: 1,
       title: "២. របៀបដើរ និងការលោតពិសេសរបស់កូនអុក (How to Move Pieces)",
-      description: "ស្វែងយល់ និងសាកល្បងរបៀបដើរកូនអុកទាំងអស់នៅលើក្តារ៖ ស្តេច (Sdaach), នាង (Neang), គោល (Koul), សេះ (Sesh), ទូក (Touk) និងត្រី (Trey) រួមទាំងជំនាញលោតពិសេសរបស់ស្តេច និងនាង។",
+      description: "ស្វែងយល់អំពីក្តារអុក និងទីតាំងដំបូង៖\n• កូអរដោនេក្តារ៖ ជួរឈរមានអក្សរ A ដល់ H (ឆ្វេងទៅស្តាំ) និងជួរដេកមានលេខ ១ ដល់ ៨ (ក្រោមទៅលើ)។ រាល់ក្រឡាអុកនីមួយៗហៅតាមអក្សរជួរឈររួមជាមួយលេខជួរដេក (ឧទាហរណ៍៖ e3, d1)។\n• ទីតាំងកូនត្រី (Pawn)៖ ចាប់ផ្តើមនៅជួរដេកទី៣ (a3 ដល់ h3) មិនមែនជួរទី២ ដូចអុកអន្តរជាតិឡើយ។\n• ទីតាំងជួរក្រោយបង្អស់ (ជួរដេកទី១)៖ ទូក (a1, h1), សេះ (b1, g1), គោល (c1, f1), ស្តេច (d1) និងនាង (e1)។\n*ចំណាំ៖ នាង (Queen) ស្ថិតនៅខាងស្តាំស្តេច (King) ជានិច្ច តាមទិសដៅរបស់អ្នកលេង។",
       instructions: (history: Move[]) => {
         if (history.length === 0) return "សូមចុចលើកូនអុកណាមួយនៅលើក្តារ ដើម្បីសាកល្បងដើរ។ សាកល្បងដើរយ៉ាងហោចណាស់ ៣ដង ដើម្បីបញ្ចប់មេរៀន។";
         if (history.length < 3) return `អ្នកបានសាកល្បងដើរ ${history.length}/3 ជំហានហើយ។ បន្តសាកល្បងដើម្បីយល់ពីរបៀបដើររបស់កូនអុកនីមួយៗ!`;
@@ -1432,7 +1432,7 @@ export default function Home() {
               <div className="space-y-4 flex-grow overflow-y-auto pr-1">
                 <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-850/80 space-y-1.5">
                   <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">🎯 Lesson Goal</h3>
-                  <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                  <p className="text-xs text-slate-300 leading-relaxed font-sans whitespace-pre-line">
                     {tutorialChapters[currentChapterIndex].description}
                   </p>
                 </div>
