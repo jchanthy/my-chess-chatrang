@@ -7,6 +7,7 @@ import {
   isKingInCheck,
   getHonorCountingLimit,
   countTotalPieces,
+  countColorPieces,
   hasUnpromotedPawns,
   copyBoard,
   toAlgebraic,
@@ -50,6 +51,21 @@ export default function Home() {
 
   // Tab systems
   const [activeTab, setActiveTab] = useState<'play' | 'academy'>('play');
+  const [gameStarted, setGameStarted] = useState<boolean>(false);
+
+  // Clock / Timer States
+  const [timeLimit, setTimeLimit] = useState<number | null>(600); // 10 minutes default
+  const [whiteTime, setWhiteTime] = useState<number>(600);
+  const [blackTime, setBlackTime] = useState<number>(600);
+  const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
+  const [isCustomTime, setIsCustomTime] = useState<boolean>(false);
+  const [customMinutes, setCustomMinutes] = useState<string>('60');
+  const [playerColor, setPlayerColor] = useState<PieceColor>('w');
+  const [whoStarts, setWhoStarts] = useState<'player' | 'opponent'>('player');
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'connected' | 'offline'>('checking');
+  const [engineActiveText, setEngineActiveText] = useState<string>('');
+  const [showPlaySetup, setShowPlaySetup] = useState<boolean>(false);
+  const [pieceTheme, setPieceTheme] = useState<'wood' | 'metallic'>('wood');
 
   // Tutorial Academy State
   const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
@@ -161,11 +177,15 @@ export default function Home() {
       title: "៥. យុទ្ធសាស្ត្រក្បួនស្នែង (Horn Defense Setup)",
       description: "អភិវឌ្ឍសេះទាំងពីរឡើងទៅកាន់ការ៉ូ c4 និង f4។ ត្រូវរុញត្រីនៅ c3 និង f3 ឡើងមុនសិន ដើម្បីបើកផ្លូវឱ្យសេះលោត។ នេះជាយុទ្ធសាស្ត្រមានតុល្យភាពបំផុត និងពេញនិយមបំផុត។",
       instructions: (history: Move[]) => {
-        if (history.length === 0) return "ជំហានទី១៖ រុញត្រីពី c3 ទៅ c4 ដើម្បីបើកផ្លូវឱ្យសេះ។";
-        if (history.length === 1) return "ជំហានទី២៖ រុញត្រីពី f3 ទៅ f4 ដើម្បីបើកផ្លូវឱ្យសេះ។";
-        if (history.length === 2) return "ជំហានទី៣៖ ឡើងសេះខាងឆ្វេងពី b1 ទៅ c3 ។";
-        if (history.length === 3) return "ជំហានទី៤៖ ឡើងសេះខាងស្តាំពី g1 ទៅ f3 ។";
-        return "យុទ្ធសាស្ត្រក្បួនស្នែងត្រូវបានរៀបចំរួចរាល់! 🌟";
+        if (history.length === 0) return "ជំហានទី១៖ រុញត្រីពី e3 ➔ e4 ដើម្បីបើកផ្លូវឱ្យនាង និងគោល។";
+        if (history.length === 1) return "ជំហានទី២៖ រុញត្រីពី c3 ➔ c4 ដើម្បីបើកផ្លូវឱ្យសេះឆ្វេង។";
+        if (history.length === 2) return "ជំហានទី៣៖ ឡើងសេះខាងឆ្វេងពី b1 ➔ c3 ។";
+        if (history.length === 3) return "ជំហានទី៤៖ ឡើងនាង (Queen) e1 ➔ e3 (លោតត្រង់ទៅមុខ ២ ក្រឡា) ដើម្បីគ្រប់គ្រងកណ្តាលក្តារ។";
+        if (history.length === 4) return "ជំហានទី៥៖ រុញត្រីពី f3 ➔ f4 ដើម្បីបើកផ្លូវឱ្យសេះស្តាំ។";
+        if (history.length === 5) return "ជំហានទី៦៖ ឡើងសេះខាងស្តាំពី g1 ➔ f3 ។";
+        if (history.length === 6) return "ជំហានទី៧៖ ឡើងគោល (Bishop) ខាងឆ្វេង c1 ➔ d2 ដើម្បីបង្កើតខ្សែការពារ។";
+        if (history.length === 7) return "ជំហានទី៨៖ ឡើងគោល (Bishop) ខាងស្តាំ f1 ➔ e2 ដើម្បីរៀបចំសហការកម្លាំង។";
+        return "អបអរសាទរ! បងបានបញ្ចប់ការរៀបចំក្បួនអុកក្បួនស្នែងទាំងស្រុងហើយ! ឥឡូវបងអាចគ្រប់គ្រងក្តារអុក និងត្រៀមខ្លួនប្រកួតឈ្នះគូប្រកួតហើយ! 🏆";
       },
       setup: () => {
         return createInitialBoard();
@@ -173,32 +193,52 @@ export default function Home() {
       checkMove: (move, history) => {
         const step = history.length;
         if (step === 1) {
-          // Step 1: Push c3 pawn to c4 (row 5, col 2 → row 4, col 2)
-          return move.from.row === 5 && move.from.col === 2 && move.to.row === 4 && move.to.col === 2;
+          // Step 1: Push e3 pawn to e4 (row 5, col 4 → row 4, col 4)
+          return move.from.row === 5 && move.from.col === 4 && move.to.row === 4 && move.to.col === 4;
         }
         if (step === 2) {
-          // Step 2: Push f3 pawn to f4 (row 5, col 5 → row 4, col 5)
-          return move.from.row === 5 && move.from.col === 5 && move.to.row === 4 && move.to.col === 5;
+          // Step 2: Push c3 pawn to c4 (row 5, col 2 → row 4, col 2)
+          return move.from.row === 5 && move.from.col === 2 && move.to.row === 4 && move.to.col === 2;
         }
         if (step === 3) {
           // Step 3: Knight b1 to c3 (row 7, col 1 → row 5, col 2)
           return move.from.row === 7 && move.from.col === 1 && move.to.row === 5 && move.to.col === 2;
         }
         if (step === 4) {
-          // Step 4: Knight g1 to f3 (row 7, col 6 → row 5, col 5)
+          // Step 4: Queen e1 to e3 (row 7, col 4 → row 5, col 4)
+          return move.from.row === 7 && move.from.col === 4 && move.to.row === 5 && move.to.col === 4;
+        }
+        if (step === 5) {
+          // Step 5: Push f3 pawn to f4 (row 5, col 5 → row 4, col 5)
+          return move.from.row === 5 && move.from.col === 5 && move.to.row === 4 && move.to.col === 5;
+        }
+        if (step === 6) {
+          // Step 6: Knight g1 to f3 (row 7, col 6 → row 5, col 5)
           return move.from.row === 7 && move.from.col === 6 && move.to.row === 5 && move.to.col === 5;
+        }
+        if (step === 7) {
+          // Step 7: Koul c1 to d2 (row 7, col 2 → row 6, col 3)
+          return move.from.row === 7 && move.from.col === 2 && move.to.row === 6 && move.to.col === 3;
+        }
+        if (step === 8) {
+          // Step 8: Koul f1 to e2 (row 7, col 5 → row 6, col 4)
+          return move.from.row === 7 && move.from.col === 5 && move.to.row === 6 && move.to.col === 4;
         }
         return false;
       },
       checkComplete: (board, move, history) => {
-        return history.length === 4;
+        return history.length === 8;
       },
       guideMove: (history) => {
         const step = history.length;
-        if (step === 0) return { from: { row: 5, col: 2 }, to: { row: 4, col: 2 } }; // c3 -> c4
-        if (step === 1) return { from: { row: 5, col: 5 }, to: { row: 4, col: 5 } }; // f3 -> f4
+        if (step === 0) return { from: { row: 5, col: 4 }, to: { row: 4, col: 4 } }; // e3 -> e4
+        if (step === 1) return { from: { row: 5, col: 2 }, to: { row: 4, col: 2 } }; // c3 -> c4
         if (step === 2) return { from: { row: 7, col: 1 }, to: { row: 5, col: 2 } }; // b1 -> c3
-        if (step === 3) return { from: { row: 7, col: 6 }, to: { row: 5, col: 5 } }; // g1 -> f3
+        if (step === 3) return { from: { row: 7, col: 4 }, to: { row: 5, col: 4 } }; // e1 -> e3
+        if (step === 4) return { from: { row: 5, col: 5 }, to: { row: 4, col: 5 } }; // f3 -> f4
+        if (step === 5) return { from: { row: 7, col: 6 }, to: { row: 5, col: 5 } }; // g1 -> f3
+        if (step === 6) return { from: { row: 7, col: 2 }, to: { row: 6, col: 3 } }; // c1 -> d2
+        if (step === 7) return { from: { row: 7, col: 5 }, to: { row: 6, col: 4 } }; // f1 -> e2
         return null;
       }
     }
@@ -209,9 +249,69 @@ export default function Home() {
     resetGame();
   }, []);
 
+  // Check backend health status on mount
+  useEffect(() => {
+    const checkBackend = async () => {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ouk-chatrang-backend-56450014005.us-central1.run.app';
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/health`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === 'healthy') {
+            setBackendStatus('connected');
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Error checking backend status:', err);
+      }
+      setBackendStatus('offline');
+    };
+    checkBackend();
+  }, []);
+
+  // Timer Tick Loop
+  useEffect(() => {
+    if (!isTimerActive || winner || academyActive || timeLimit === null) return;
+
+    const interval = setInterval(() => {
+      if (turn === 'w') {
+        setWhiteTime((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setWinner('b'); // Black wins on time
+            setIsTimerActive(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      } else {
+        setBlackTime((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setWinner('w'); // White wins on time
+            setIsTimerActive(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isTimerActive, winner, turn, academyActive, timeLimit]);
+
+  // Handle timeLimit configuration updates
+  useEffect(() => {
+    if (timeLimit !== null) {
+      setWhiteTime(timeLimit);
+      setBlackTime(timeLimit);
+    }
+  }, [timeLimit]);
+
   const resetGame = () => {
     setBoard(createInitialBoard());
-    setTurn('w');
+    setTurn(vsAI ? (whoStarts === 'player' ? playerColor : (playerColor === 'w' ? 'b' : 'w')) : 'w');
     setSelectedPos(null);
     setLegalMoves([]);
     setHistory([]);
@@ -226,6 +326,15 @@ export default function Home() {
       limit: 64,
       reason: ''
     });
+    
+    // Reset clocks
+    if (timeLimit !== null) {
+      setWhiteTime(timeLimit);
+      setBlackTime(timeLimit);
+      setIsTimerActive(true);
+    } else {
+      setIsTimerActive(false);
+    }
   };
 
   const startAcademyChapter = (index: number) => {
@@ -243,28 +352,33 @@ export default function Home() {
 
   // Run AI Coaching Tip generator
   useEffect(() => {
-    if (coachEnabled && turn === 'w' && !winner && board.length > 0 && !academyActive) {
-      const { tip, suggestion } = getCoachTip(board, history);
-      setCoachTip(tip);
-      setCoachSuggestion(suggestion);
+    if (coachEnabled && !winner && board.length > 0 && !academyActive) {
+      if (vsAI && turn !== playerColor) {
+        setCoachTip("🤖 គូប្រកួត AI កំពុងគិត... រង់ចាំវេនរបស់អ្នក ដើម្បីទទួលបានការណែនាំ។");
+        setCoachSuggestion(null);
+      } else {
+        const { tip, suggestion } = getCoachTip(board, history);
+        setCoachTip(tip);
+        setCoachSuggestion(suggestion);
+      }
     } else {
       setCoachTip('');
       setCoachSuggestion(null);
     }
-  }, [board, turn, coachEnabled, winner, academyActive]);
+  }, [board, turn, coachEnabled, winner, academyActive, playerColor, vsAI]);
 
   // AI Move triggers
   useEffect(() => {
-    if (vsAI && turn === 'b' && !winner && !academyActive) {
+    if (vsAI && turn !== playerColor && !winner && !academyActive) {
       const timer = setTimeout(() => {
         makeAIMove();
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [turn, vsAI, winner, academyActive]);
+  }, [turn, vsAI, winner, academyActive, playerColor]);
 
   const getCoachTip = (currentBoard: Board, currentHistory: Move[]): { tip: string; suggestion: { from: Position; to: Position } | null } => {
-    const search = minimax(currentBoard, 3, -Infinity, Infinity, true, currentHistory);
+    const search = minimax(currentBoard, 3, -Infinity, Infinity, turn === 'w', currentHistory);
     const bestMove = search.move;
     if (!bestMove) {
       return { tip: "មិនមានកូនអុកអាចដើរបានទេ (អុកងាប់ ឬស្មើ)!", suggestion: null };
@@ -292,14 +406,15 @@ export default function Home() {
 
     if (target) {
       const targetName = pieceNamesKhmer[target.type] || target.type;
-      explanation = `⚔️ **ឱកាសស៊ីកូនអុក:** ស៊ី ${targetName} ពណ៌ខ្មៅនៅត្រង់ការ៉ូ **${toName}** ដោយប្រើ ${pName} របស់អ្នកពី ${fromName} ដើម្បីយកចំណេញកម្លាំងវាយប្រហារ!`;
+      const targetColorKh = target.color === 'w' ? 'ស' : 'ខ្មៅ';
+      explanation = `⚔️ **ឱកាសស៊ីកូនអុក:** ស៊ី ${targetName} ពណ៌${targetColorKh} នៅត្រង់ការ៉ូ **${toName}** ដោយប្រើ ${pName} របស់អ្នកពី ${fromName} ដើម្បីយកចំណេញកម្លាំងវាយប្រហារ!`;
     } else if (piece.type === 'trey' && bestMove.to.row === 2) {
       explanation = `⭐ **ការឡើងបុណ្យត្រី:** រុញកូនត្រីទៅកាន់ការ៉ូ **${toName}**! ការឡើងបុណ្យវាទៅជានាង (ត្រីកើត) នឹងបង្កើនឥទ្ធិពលវាយប្រហារតាមអង្កត់ទ្រូងយ៉ាងខ្លាំង។`;
     } else if (piece.type === 'sdaach' && !piece.hasMoved && Math.abs(bestMove.to.row - bestMove.from.row) > 1) {
       explanation = `👑 **ការលោតពិសេសរបស់ស្តេច:** លោតស្តេចរបស់អ្នកដូចសេះទៅកាន់ **${toName}** ដើម្បីគេចចេញពីការគំរាមកំហែង និងអភិវឌ្ឍប្រព័ន្ធការពារឱ្យបានលឿន។`;
     } else if (piece.type === 'neang' && !piece.hasMoved && Math.abs(bestMove.to.row - bestMove.from.row) === 2) {
       explanation = `👸 **ការលោតពិសេសរបស់នាង:** លោតនាងទៅមុខ ២ការ៉ូទៅកាន់ **${toName}** ដើម្បីគ្រប់គ្រងកណ្តាលក្តារតាំងពីដំបូងទី។`;
-    } else if (piece.type === 'sdaach' && isKingInCheck(currentBoard, 'w')) {
+    } else if (piece.type === 'sdaach' && isKingInCheck(currentBoard, turn)) {
       explanation = `⚠️ **ការពារស្តេច:** ស្តេចរបស់អ្នកកំពុងរងការអុក! គេចទៅកាន់ **${toName}** ជាបន្ទាន់ដើម្បីការពារសុវត្ថិភាព។`;
     } else {
       const centerSquares = ['d4', 'd5', 'e4', 'e5', 'd3', 'e3', 'd6', 'e6'];
@@ -316,6 +431,13 @@ export default function Home() {
   const makeAIMove = async () => {
     if (aiDifficulty === 'engine') {
       setIsCalculatedByEngine(true);
+      setEngineActiveText('Fairy-Stockfish ម៉ាស៊ីនកំពុងគិត... (Thinking...)');
+      
+      // Set a timer to detect cold starts after 3.5 seconds
+      const coldStartTimer = setTimeout(() => {
+        setEngineActiveText('ម៉ាស៊ីនកំពុងដំណើរការឡើងវិញ (Server Cold Start...) សូមរង់ចាំ ១០-២០វិនាទី');
+      }, 3500);
+
       try {
         const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ouk-chatrang-backend-56450014005.us-central1.run.app';
         const response = await fetch(`${apiBaseUrl}/api/move`, {
@@ -323,27 +445,35 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ board, turn, history })
         });
+        clearTimeout(coldStartTimer);
         if (response.ok) {
           const data = await response.json();
           if (data.move) {
             executeMove(data.move.from, data.move.to);
             setIsCalculatedByEngine(false);
+            setEngineActiveText('');
             return;
           }
         }
       } catch (err) {
         console.error('Engine error, falling back to local heuristic:', err);
+        clearTimeout(coldStartTimer);
       }
+      
+      // If backend failed or timed out, display message and fall back to local minimax
+      setEngineActiveText('ម៉ាស៊ីនគណនាជួបបញ្ហា! កំពុងប្តូរទៅប្រើម៉ាស៊ីនមូលដ្ឋាន (Fallback to Local)...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
       setIsCalculatedByEngine(false);
+      setEngineActiveText('');
     }
 
     // Minimax search with Alpha-Beta pruning for AI opponent
-    const result = minimax(board, 3, -Infinity, Infinity, false, history);
+    const result = minimax(board, 3, -Infinity, Infinity, turn === 'w', history);
     if (result.move) {
       executeMove(result.move.from, result.move.to);
     } else {
-      if (isKingInCheck(board, 'b')) {
-        setWinner('w');
+      if (isKingInCheck(board, turn)) {
+        setWinner(turn === 'w' ? 'b' : 'w');
       } else {
         setWinner('draw');
       }
@@ -351,7 +481,7 @@ export default function Home() {
   };
 
   const handleSquareClick = (row: number, col: number) => {
-    if (winner || (vsAI && turn === 'b' && !academyActive) || chapterSuccess) return;
+    if (winner || (vsAI && turn !== playerColor && !academyActive) || chapterSuccess) return;
 
     const clickedPiece = board[row][col];
 
@@ -464,25 +594,53 @@ export default function Home() {
     let nextCounting = { ...countingState };
 
     if (!nextBoardHasUnpromoted) {
+      const isDefendingCritically = countColorPieces(activeBoard, nextTurn) <= 3;
+      
       if (!countingState.isActive) {
-        const totalPieces = countTotalPieces(activeBoard);
-        const { limit, reason } = getHonorCountingLimit(activeBoard, nextTurn);
+        // Initialize counting
+        const startCount = isDefendingCritically ? (countTotalPieces(activeBoard) + 1) : 1;
+        const { limit, reason } = isDefendingCritically 
+          ? getHonorCountingLimit(activeBoard, nextTurn)
+          : { limit: 64, reason: 'No unpromoted pawns on board' };
+          
         nextCounting = {
           isActive: true,
-          count: totalPieces + 1,
+          count: startCount,
           limit,
           reason
         };
       } else {
+        // Increment counting
         const nextCount = countingState.count + 1;
-        if (nextCount > countingState.limit) {
+        
+        // If defending side falls to 3 or fewer pieces, transition to the Board Count
+        let currentLimit = countingState.limit;
+        let currentReason = countingState.reason;
+        let currentCount = nextCount;
+        
+        if (isDefendingCritically && countingState.limit === 64) {
+          // Defending side just fell to 3 or fewer pieces. Transition to board count.
+          const { limit, reason } = getHonorCountingLimit(activeBoard, nextTurn);
+          currentLimit = limit;
+          currentReason = reason;
+          currentCount = countTotalPieces(activeBoard) + 1;
+        }
+        
+        if (currentCount > currentLimit) {
           setWinner('draw');
         }
-        nextCounting.count = nextCount;
-        const { limit, reason } = getHonorCountingLimit(activeBoard, nextTurn);
-        nextCounting.limit = limit;
-        nextCounting.reason = reason;
+        
+        nextCounting.count = currentCount;
+        nextCounting.limit = currentLimit;
+        nextCounting.reason = currentReason;
       }
+    } else {
+      nextCounting = {
+        isActive: false,
+        count: 0,
+        limit: 64,
+        reason: ''
+      };
     }
     setCountingState(nextCounting);
 
@@ -547,29 +705,434 @@ export default function Home() {
     return academyGuide && academyGuide.to.row === r && academyGuide.to.col === c;
   };
 
+  const formatTime = (seconds: number): string => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
   return (
-    <div className={`min-h-screen text-white p-4 md:p-8 flex flex-col items-center transition-all duration-500 bg-radial ${
+    <div className={`min-h-screen text-white ${gameStarted ? 'p-2 md:p-4' : 'p-4 md:p-8'} flex flex-col items-center justify-center transition-all duration-500 bg-radial ${
       activeTab === 'academy' 
         ? 'from-emerald-950 via-zinc-950 to-black' 
         : 'from-slate-900 via-zinc-950 to-black'
     }`}>
-      {/* Header */}
-      <header className="mb-4 text-center select-none">
-        <h1 className="text-3xl md:text-5xl font-bold tracking-wider bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent drop-shadow-md">
-          OUK CHATRANG
-        </h1>
-        <p className={`text-xs md:text-sm font-semibold tracking-widest mt-1 uppercase transition-colors duration-500 ${
-          activeTab === 'academy' ? 'text-emerald-400' : 'text-amber-500/80'
-        }`}>
-          {activeTab === 'academy' ? 'សាលាបណ្តុះបណ្តាលអុកចត្រង្គ • Chess Academy' : 'អុកចត្រង្គ • Cambodian Traditional Chess'}
-        </p>
-      </header>
+      {!gameStarted ? (
+        /* STUNNING MAIN LANDING MENU */
+        <div className="w-full max-w-lg bg-slate-950/85 border border-amber-500/30 rounded-3xl p-8 shadow-2xl backdrop-blur-md flex flex-col items-center space-y-6 select-none text-center my-auto">
+          <div className="space-y-2">
+            <h1 className="text-4xl md:text-5xl font-black tracking-wider bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent drop-shadow-md">
+              អុកចត្រង្គ
+            </h1>
+            <p className="text-xs font-semibold tracking-widest text-amber-500/80 uppercase">
+              OUK CHATRANG • CAMBODIAN CHESS
+            </p>
+          </div>
 
-      {/* Main Grid Area */}
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {!showPlaySetup ? (
+            /* STEP 1: CHOOSE PLAY OR LEARN */
+            <>
+              <div className="w-full space-y-4 py-4">
+                <button
+                  onClick={() => {
+                    setShowPlaySetup(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black py-4 px-6 rounded-2xl text-base transition-all duration-300 shadow-[0_0_20px_rgba(217,119,6,0.3)] hover:scale-[1.02] cursor-pointer"
+                >
+                  🎮 PLAY MATCH
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('academy');
+                    setGameStarted(true);
+                  }}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-amber-400 hover:text-amber-300 font-bold py-4 px-6 rounded-2xl text-base transition-all duration-300 border border-amber-500/30 hover:border-amber-400/50 hover:scale-[1.02] cursor-pointer"
+                >
+                  🎓 CHESS ACADEMY (LEARN)
+                </button>
+              </div>
+
+              <div className="text-[10px] text-slate-500 font-sans max-w-xs leading-relaxed">
+                Learn the rules, practice specific chess patterns, or play against a smart local AI engine.
+              </div>
+            </>
+          ) : (
+            /* STEP 2: SHOW MATCH CONFIGURATION OPTIONS */
+            <>
+              {/* Quick Settings Section */}
+              <div className="w-full bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-4 text-left">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-1.5">
+                  <h2 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                    Match Settings
+                  </h2>
+                  {/* Connection Status Badge */}
+                  <div className="flex items-center gap-1.5 text-[9px] font-bold select-none">
+                    {backendStatus === 'checking' && (
+                      <>
+                        <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-ping"></span>
+                        <span className="text-yellow-500">Checking AI...</span>
+                      </>
+                    )}
+                    {backendStatus === 'connected' && (
+                      <>
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        <span className="text-emerald-400">AI Online</span>
+                      </>
+                    )}
+                    {backendStatus === 'offline' && (
+                      <>
+                        <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                        <span className="text-red-400">AI Offline (Local Mode)</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                 {/* Opponent Selection & AI Difficulty Toggles */}
+                 <div className="grid grid-cols-2 gap-3">
+                   <div className="space-y-1">
+                     <label className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Opponent Type</label>
+                     <div className="grid grid-cols-2 gap-1.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+                        <button 
+                         onClick={() => setVsAI(false)}
+                         className={`py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                           !vsAI ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10' : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                         }`}
+                       >
+                         Local
+                       </button>
+                       <button 
+                         onClick={() => setVsAI(true)}
+                         className={`py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                           vsAI ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10' : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                         }`}
+                       >
+                         AI
+                       </button>
+                     </div>
+                   </div>
+
+                   {vsAI ? (
+                     <div className="space-y-1">
+                       <label className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">AI Difficulty</label>
+                       <div className="grid grid-cols-2 gap-1.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+                         <button 
+                           onClick={() => setAiDifficulty('easy')}
+                           className={`py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                             aiDifficulty === 'easy' ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10' : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                           }`}
+                         >
+                           Easy
+                         </button>
+                         <button 
+                           onClick={() => setAiDifficulty('engine')}
+                           className={`py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                             aiDifficulty === 'engine' ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10' : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                           }`}
+                         >
+                           Stockfish
+                         </button>
+                       </div>
+                     </div>
+                   ) : (
+                     <div className="space-y-1 opacity-45">
+                       <label className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">AI Difficulty</label>
+                       <div className="grid grid-cols-1 bg-slate-950/40 p-0.5 rounded-lg border border-slate-900 text-center py-1.5 text-[10px] text-slate-600 font-bold select-none">
+                         Disabled
+                       </div>
+                     </div>
+                   )}
+                 </div>
+
+                {/* Choose Side Color & Starting Move Toggles */}
+                {vsAI && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Your Side</label>
+                      <div className="grid grid-cols-2 gap-1.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+                        <button 
+                          onClick={() => setPlayerColor('w')}
+                          className={`py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                            playerColor === 'w' ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10' : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`}
+                        >
+                          White
+                        </button>
+                        <button 
+                          onClick={() => setPlayerColor('b')}
+                          className={`py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                            playerColor === 'b' ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10' : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`}
+                        >
+                          Black
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Play First</label>
+                      <div className="grid grid-cols-2 gap-1.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+                        <button 
+                          onClick={() => setWhoStarts('player')}
+                          className={`py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                            whoStarts === 'player' ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10' : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`}
+                        >
+                          Yes
+                        </button>
+                        <button 
+                          onClick={() => setWhoStarts('opponent')}
+                          className={`py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                            whoStarts === 'opponent' ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10' : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`}
+                        >
+                          No
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Time Control Options */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Time Control</label>
+                  <div className="grid grid-cols-6 gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+                    {[
+                      { label: '5m', value: 300, isCustom: false },
+                      { label: '10m', value: 600, isCustom: false },
+                      { label: '30m', value: 1800, isCustom: false },
+                      { label: '60m', value: 3600, isCustom: false },
+                      { label: '∞', value: null, isCustom: false },
+                      { label: 'Custom', value: -1, isCustom: true }
+                    ].map((t) => (
+                      <button
+                        key={t.label}
+                        onClick={() => {
+                          if (t.isCustom) {
+                            setIsCustomTime(true);
+                            const mins = parseInt(customMinutes, 10);
+                            setTimeLimit(isNaN(mins) ? 60 : mins * 60);
+                          } else {
+                            setIsCustomTime(false);
+                            setTimeLimit(t.value);
+                          }
+                        }}
+                        className={`py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                          (t.isCustom && isCustomTime) || (!t.isCustom && !isCustomTime && timeLimit === t.value)
+                            ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10'
+                            : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Custom Time Input Field */}
+                  {isCustomTime && (
+                    <div className="flex items-center gap-2 mt-2 bg-slate-950/60 p-2 rounded-xl border border-slate-800">
+                      <span className="text-[10px] text-slate-400 uppercase font-black tracking-widest pl-1">Minutes:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="1440"
+                        value={customMinutes}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomMinutes(val);
+                          const mins = parseInt(val, 10);
+                          if (!isNaN(mins) && mins > 0) {
+                            setTimeLimit(mins * 60);
+                          }
+                        }}
+                        className="flex-1 bg-slate-900 border border-slate-800 text-amber-300 font-mono font-bold text-xs py-1 px-2.5 rounded-lg focus:outline-none focus:border-amber-400 transition-colors"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Chess Style / Piece Theme Selector */}
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Chess Pieces Style</label>
+                  <div className="grid grid-cols-2 gap-1.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+                    <button 
+                      onClick={() => setPieceTheme('wood')}
+                      className={`py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                        pieceTheme === 'wood' ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10' : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                      }`}
+                    >
+                      Wood (ឈើ)
+                    </button>
+                    <button 
+                      onClick={() => setPieceTheme('metallic')}
+                      className={`py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                        pieceTheme === 'metallic' ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10' : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                      }`}
+                    >
+                      Metallic (លោហៈ)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 w-full pt-1.5">
+                <button
+                  onClick={() => {
+                    setShowPlaySetup(false);
+                  }}
+                  className="col-span-1 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all duration-300 border border-slate-800/80 hover:scale-[1.01] cursor-pointer"
+                >
+                  ⬅️ Back
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('play');
+                    setGameStarted(true);
+                    setAcademyActive(false);
+                    resetGame();
+                  }}
+                  className="col-span-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black py-2.5 px-4 rounded-xl text-xs transition-all duration-300 shadow-[0_0_15px_rgba(217,119,6,0.25)] hover:scale-[1.01] cursor-pointer"
+                >
+                  🎮 START PLAY
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        /* Main Content Area */
+        activeTab === 'academy' && !academyActive ? (
+        /* WIDE-SCREEN ACADEMY MENU (DASHBOARD) */
+        <div className="w-full max-w-5xl bg-slate-950/80 border border-emerald-500/30 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-md flex flex-col space-y-6 mt-4">
+          {/* Academy Header */}
+          <div className="border-b border-emerald-500/20 pb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-black text-amber-400">សាលាបណ្តុះបណ្តាលអុកចត្រង្គ 🎓</h2>
+              <p className="text-xs md:text-sm text-slate-400 mt-1">រៀនពីច្បាប់ របៀបលេង និងយុទ្ធសាស្ត្រឈ្នះអុកខ្មែរពីកម្រិតដំបូងដល់អាជីព</p>
+            </div>
+            <button 
+              onClick={() => { setActiveTab('play'); resetGame(); }}
+              className="bg-amber-400 hover:bg-amber-300 text-slate-950 px-6 py-2.5 rounded-xl font-bold text-sm tracking-wider transition-all shadow-[0_0_15px_rgba(251,191,36,0.3)] self-start md:self-auto"
+            >
+              🎮 ចូលទៅលេងក្តារអុក (Play Match Mode)
+            </button>
+          </div>
+
+          {/* Sub-tab selection */}
+          <div className="flex gap-2 p-1 bg-slate-900 rounded-xl border border-slate-800 w-full sm:w-[400px]">
+            <button 
+              onClick={() => setAcademySubTab('challenges')}
+              className={`flex-1 py-2 text-xs font-black rounded-lg transition-all ${
+                academySubTab === 'challenges' ? 'bg-amber-400 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              ⚔️ របៀបដើរអនុវត្ត (Tutorials)
+            </button>
+            <button 
+              onClick={() => setAcademySubTab('strategies')}
+              className={`flex-1 py-2 text-xs font-black rounded-lg transition-all ${
+                academySubTab === 'strategies' ? 'bg-amber-400 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              📚 ក្បួនយុទ្ធសាស្ត្រល្បីៗ (Setups)
+            </button>
+          </div>
+
+          {/* Sub-tab Content Panels */}
+          {academySubTab === 'challenges' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {tutorialChapters.map((chapter, index) => (
+                <div 
+                  key={chapter.id} 
+                  onClick={() => startAcademyChapter(index)}
+                  className="p-5 rounded-2xl border border-slate-800 bg-slate-900/30 hover:bg-slate-900/80 hover:border-emerald-500/40 cursor-pointer transition-all duration-305 group flex flex-col justify-between space-y-4"
+                >
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <h3 className="text-base font-black text-amber-400 group-hover:text-yellow-300 transition-colors">{chapter.title}</h3>
+                      <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">មេរៀនទី {index + 1}</span>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed font-sans">{chapter.description}</p>
+                  </div>
+                  <button className="bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all font-bold text-xs py-2 px-4 rounded-xl self-start flex items-center gap-1">
+                    ចាប់ផ្តើមអនុវត្ត (Start Lesson) ➔
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Strategy Cards */}
+              <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900/30 space-y-3">
+                <h3 className="text-base font-black text-amber-400">១. ក្បួនស្នែង ឬរបាំងស្នែង (Horn Defense)</h3>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                  រុញត្រីនៅ c3 និង f3 ឡើង រួចអភិវឌ្ឍសេះទាំងពីរទៅកាន់ c3 និង f3 ដើម្បីគ្រប់គ្រងកណ្តាលក្តារ និងបង្កើតខែលការពារស្តេច។
+                </p>
+                <div className="text-xs text-emerald-300/90 font-mono bg-slate-950/80 p-3.5 rounded-xl border border-emerald-500/20 leading-relaxed space-y-1">
+                  <strong className="text-amber-400 block border-b border-emerald-500/20 pb-1 mb-1">🐾 របៀបដើរ (៨ ជំហាន):</strong>
+                  ១. រុញត្រី d3 ➔ d4 (បើកផ្លូវនាង)<br />
+                  ២. រុញត្រី c3 ➔ c4 (បើកផ្លូវសេះឆ្វេង)<br />
+                  ៣. ឡើងសេះ b1 ➔ c3<br />
+                  ៤. ឡើងនាង d1 ➔ d3 (លោត ២ការ៉ូ)<br />
+                  ៥. រុញត្រី f3 ➔ f4 (បើកផ្លូវសេះស្តាំ)<br />
+                  ៦. ឡើងសេះ g1 ➔ f3<br />
+                  ៧. ឡើងគោល c1 ➔ d2<br />
+                  ៨. ឡើងគោល f1 ➔ e2
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900/30 space-y-3">
+                <h3 className="text-base font-black text-amber-400">២. ក្បួនខ្លាដេក ឬខ្លាពួន (Sleeping Tiger)</h3>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                  រុញត្រីម្ខាងបើកផ្លូវ រួចអភិវឌ្ឍសេះមួយទៅមុខ និងសេះមួយទៀតទៅខាង។ បង្កើតប្រព័ន្ធការពារមិនស៊ីមេទ្រី ងាយស្រួលឆ្មក់វាយប្រហារ។
+                </p>
+                <div className="text-xs text-emerald-300/90 font-mono bg-slate-950/80 p-3.5 rounded-xl border border-emerald-500/20 leading-relaxed space-y-1">
+                  <strong className="text-amber-400 block border-b border-emerald-500/20 pb-1 mb-1">🐾 របៀបដើរ:</strong>
+                  ១. រុញត្រី d3 ➔ d4 (បើកផ្លូវគោល និងនាង)<br />
+                  ២. រុញត្រី c3 ➔ c4 (បើកផ្លូវសេះ)<br />
+                  ៣. ឡើងសេះ b1 ➔ c3<br />
+                  ៤. លោតនាង d1 ➔ d2 (ការលោតពិសេស ២ការ៉ូ)<br />
+                  ៥. ឡើងសេះ g1 ➔ e2 (សេះម្ខាងពួន)
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900/30 space-y-3">
+                <h3 className="text-base font-black text-amber-400">៣. ក្បួនផ្ការីក (Flower Formation)</h3>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                  រៀបចំកូនត្រីជាលក្ខណៈអង្កត់ទ្រូងការពារគ្នាទៅវិញទៅមក។ វាជួយបិទទ្វារមិនឱ្យសេះគូប្រកួតលោតចូលមកជិតស្តេចបានឡើយ។
+                </p>
+                <div className="text-xs text-emerald-300/90 font-mono bg-slate-950/80 p-3.5 rounded-xl border border-emerald-500/20 leading-relaxed space-y-1">
+                  <strong className="text-amber-400 block border-b border-emerald-500/20 pb-1 mb-1">🐾 របៀបដើរ:</strong>
+                  ១. រុញត្រី d3 ➔ d4 និង e3 ➔ e4 (កណ្តាល)<br />
+                  ២. រុញត្រី c3 ➔ c4 និង f3 ➔ f4 (បន្តពង្រីក)<br />
+                  ៣. រក្សាត្រី b3 និង g3 នៅកន្លែង (ការពារចំហៀង)<br />
+                  ៤. ត្រៀមរុញត្រី d4/e4 ទៅមុខដើម្បីយកត្រីកើត
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900/30 space-y-3">
+                <h3 className="text-base font-black text-amber-400">៤. ក្បួនទូកចម្បាំង (Active Rook Control)</h3>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                  បើកផ្លូវឱ្យទូកអភិវឌ្ឍយ៉ាងលឿនតាមជួរឈរចំហ។ ទូកគឺជាកម្លាំងវាយលុកដ៏ខ្លាំងបំផុតក្នុងអុកចត្រង្គ។
+                </p>
+                <div className="text-xs text-emerald-300/90 font-mono bg-slate-950/80 p-3.5 rounded-xl border border-emerald-500/20 leading-relaxed space-y-1">
+                  <strong className="text-amber-400 block border-b border-emerald-500/20 pb-1 mb-1">🐾 របៀបដើរ:</strong>
+                  ១. រុញត្រី a3 ➔ a4 ឬ h3 ➔ h4 ដើម្បីបើកផ្លូវទូក<br />
+                  ២. វាយសម្រុកទម្លុះត្រីការពាររបស់គូប្រកួត<br />
+                  ៣. ដាក់ទូកពីរជាន់គ្នា (Doubled Rooks) នៅលើខ្សែតែមួយ<br />
+                  ៤. រំកិលចូលទៅជួរចុងក្រោយរបស់សត្រូវ
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Main Grid Area */
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Left Control Panels (Status & Counting / Academy Guide) */}
-        <div className="lg:col-span-3 flex flex-col gap-4">
+        <div className="lg:col-span-3 flex flex-col gap-4 order-2 lg:order-none">
           
           {/* Main Status Panel */}
           <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-5 shadow-2xl backdrop-blur-md">
@@ -578,32 +1141,98 @@ export default function Home() {
             </h2>
             
             {academyActive ? (
-              <div className="space-y-2">
-                <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-bold">
-                  Tutorial Challenge
-                </span>
-                <p className="text-slate-300 text-xs mt-2 font-semibold">
+              <div className="space-y-4 bg-slate-900/90 p-6 rounded-2xl border-2 border-emerald-400 mt-2 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
+                  <span className="bg-emerald-500 text-slate-950 text-xs px-3 py-1 rounded-full font-black uppercase tracking-widest">
+                    បេសកកម្មអុកខ្មែរ / MISSION
+                  </span>
+                  <span className="text-xs text-emerald-400 font-bold font-mono">
+                    មេរៀនទី {currentChapterIndex + 1}
+                  </span>
+                </div>
+                <p className="text-amber-300 text-lg md:text-xl lg:text-2xl leading-relaxed font-black">
                   {typeof tutorialChapters[currentChapterIndex].instructions === 'function'
                     ? (tutorialChapters[currentChapterIndex].instructions as any)(history)
                     : tutorialChapters[currentChapterIndex].instructions}
                 </p>
+                {/* Dynamically show step helper for Chapter 5 */}
+                {currentChapterIndex === 4 && (
+                  <div className="flex justify-between items-center text-xs text-slate-400 font-semibold pt-1 border-t border-slate-800">
+                    <span>ជំហានបច្ចុប្បន្ន:</span>
+                    <span className="text-emerald-400 font-black text-sm">
+                      {Math.min(history.length + 1, 8)} / 8
+                    </span>
+                  </div>
+                )}
+                <button 
+                  onClick={() => { setAcademyActive(false); resetGame(); }}
+                  className="w-full mt-3 bg-slate-850 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-bold py-2 rounded-xl transition-all border border-slate-700/50 flex items-center justify-center gap-1.5 shadow-md"
+                >
+                  ⬅️ ត្រឡប់ទៅបញ្ជីមេរៀន (Back to Lessons)
+                </button>
               </div>
             ) : (
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-slate-400">Current Turn:</span>
-                <span className={`px-4 py-1.5 rounded-full text-sm font-black tracking-wider uppercase transition-all duration-300 ${
-                  turn === 'w' 
-                    ? 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(251,191,36,0.4)]' 
-                    : 'bg-slate-800 text-white border border-slate-700'
-                }`}>
-                  {turn === 'w' ? 'Gold (White)' : 'Silver (Black)'}
-                </span>
-              </div>
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-slate-400">Current Turn:</span>
+                  <span className={`px-4 py-1.5 rounded-full text-sm font-black tracking-wider uppercase transition-all duration-300 ${
+                    turn === 'w' 
+                      ? 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(251,191,36,0.4)]' 
+                      : 'bg-slate-800 text-white border border-slate-700'
+                  }`}>
+                    {turn === 'w' ? 'White' : 'Black'}
+                  </span>
+                </div>
+
+                {/* Clocks */}
+                {timeLimit !== null && !academyActive && (
+                  <div className="mt-4 pt-4 border-t border-slate-800 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* White Player Clock */}
+                      <div className={`p-3 rounded-xl border transition-all duration-300 text-center ${
+                        turn === 'w' && !winner
+                          ? 'border-amber-400 bg-amber-400/10 shadow-[0_0_15px_rgba(251,191,36,0.2)]'
+                          : 'border-slate-800 bg-slate-900/50'
+                      }`}>
+                        <div className="text-[9px] text-amber-500/80 font-black tracking-wider uppercase mb-1">White</div>
+                        <div className={`font-mono text-xl font-bold tracking-widest ${
+                          whiteTime < 30 && turn === 'w' && !winner ? 'text-red-500 animate-pulse' : 'text-amber-300'
+                        }`}>
+                          {formatTime(whiteTime)}
+                        </div>
+                      </div>
+
+                      {/* Black Player Clock */}
+                      <div className={`p-3 rounded-xl border transition-all duration-300 text-center ${
+                        turn === 'b' && !winner
+                          ? 'border-slate-400 bg-slate-100/10 shadow-[0_0_15px_rgba(255,255,255,0.15)]'
+                          : 'border-slate-800 bg-slate-900/50'
+                      }`}>
+                        <div className="text-[9px] text-slate-400 font-black tracking-wider uppercase mb-1">Black</div>
+                        <div className={`font-mono text-xl font-bold tracking-widest ${
+                          blackTime < 30 && turn === 'b' && !winner ? 'text-red-500 animate-pulse' : 'text-slate-300'
+                        }`}>
+                          {formatTime(blackTime)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             {winner && (
               <div className="mt-4 p-4 rounded-xl text-center font-bold text-lg animate-pulse border border-emerald-500/30 bg-emerald-950/40 text-emerald-400">
-                {winner === 'draw' ? 'Game Drawn!' : `${winner === 'w' ? 'Gold' : 'Silver'} Wins!`}
+                {winner === 'draw' ? (
+                  'Game Drawn!'
+                ) : (
+                  <>
+                    <div>{winner === 'w' ? 'White' : 'Black'} Wins!</div>
+                    {timeLimit !== null && ((winner === 'w' && blackTime === 0) || (winner === 'b' && whiteTime === 0)) && (
+                      <div className="text-xs uppercase tracking-wider mt-1 text-emerald-300">on time ⏱️</div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 
@@ -627,8 +1256,8 @@ export default function Home() {
             )}
 
             {isCalculatedByEngine && (
-              <div className="mt-2 text-xs text-amber-300 animate-pulse text-center">
-                🤖 Fairy-Stockfish កំពុងគណនាជំហានដើរ...
+              <div className="mt-2.5 text-xs text-amber-300 animate-pulse text-center font-semibold bg-slate-900/60 p-2 rounded-xl border border-slate-850/80 select-none">
+                🤖 {engineActiveText || 'Fairy-Stockfish កំពុងគណនាជំហានដើរ...'}
               </div>
             )}
           </div>
@@ -653,79 +1282,101 @@ export default function Home() {
               
               {coachEnabled ? (
                 coachTip ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2 min-h-[110px] flex flex-col justify-between">
                     <p className="text-xs text-slate-300 leading-relaxed font-sans" dangerouslySetInnerHTML={{ __html: coachTip }}></p>
-                    <p className="text-[10px] text-amber-400/70 italic mt-2">
+                    <p className="text-[10px] text-amber-400/70 italic mt-auto pt-2 border-t border-slate-900/60">
                       💡 កូអរដោនេជំហានដើរណែនាំ ត្រូវបានបង្ហាញដោយបន្ទាត់ពណ៌មាសនៅលើក្តារ!
                     </p>
                   </div>
                 ) : (
-                  <p className="text-slate-500 text-xs italic">កំពុងវិភាគយុទ្ធសាស្ត្រសម្រាប់វេនរបស់អ្នក...</p>
+                  <div className="min-h-[110px] flex items-center justify-center">
+                    <p className="text-slate-500 text-xs italic">កំពុងវិភាគយុទ្ធសាស្ត្រសម្រាប់វេនរបស់អ្នក...</p>
+                  </div>
                 )
               ) : (
-                <p className="text-slate-500 text-xs">
-                  បើកគ្រូបង្វឹកយុទ្ធសាស្ត្រ ដើម្បីទទួលបានការណែនាំពីរបៀបដើរ និងយុទ្ធសាស្ត្រលម្អិតដើម្បីយកឈ្នះគូប្រកួត។
-                </p>
+                <div className="min-h-[110px] flex items-center">
+                  <p className="text-slate-500 text-xs leading-relaxed">
+                    បើកគ្រូបង្វឹកយុទ្ធសាស្ត្រ ដើម្បីទទួលបានការណែនាំពីរបៀបដើរ និងយុទ្ធសាស្ត្រលម្អិតដើម្បីយកឈ្នះគូប្រកួត។
+                  </p>
+                </div>
               )}
             </div>
           )}
 
           {/* Piece's Honor Counting rule ticker */}
-          {!academyActive && (
-            <div className={`bg-slate-950/80 border rounded-2xl p-5 shadow-2xl backdrop-blur-md transition-all duration-500 ${
-              countingState.isActive ? 'border-amber-500' : 'border-slate-800 opacity-60'
-            }`}>
+          {!academyActive && countingState.isActive && (
+            <div className="bg-slate-950/85 border border-amber-500 rounded-2xl p-5 shadow-2xl backdrop-blur-md animate-pulse">
               <div className="flex items-center gap-2 mb-2">
                 <span className="relative flex h-3 w-3">
-                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                    countingState.isActive ? 'bg-amber-400' : 'bg-slate-500'
-                  }`}></span>
-                  <span className={`relative inline-flex rounded-full h-3 w-3 ${
-                    countingState.isActive ? 'bg-amber-500' : 'bg-slate-600'
-                  }`}></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-amber-400"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
                 </span>
-                <h2 className="text-lg font-bold text-amber-400">Honor Counting</h2>
+                <h2 className="text-sm font-bold text-amber-400">Honor Counting</h2>
               </div>
               
-              {countingState.isActive ? (
-                <div className="space-y-3">
-                  <p className="text-xs text-amber-300/80 italic font-mono">{countingState.reason}</p>
-                  <div className="flex justify-between items-end">
-                    <span className="text-slate-400 text-xs">Current Count:</span>
-                    <span className="text-3xl font-extrabold text-amber-400 tracking-tighter">
-                      {countingState.count} <span className="text-sm font-medium text-slate-500">/ {countingState.limit}</span>
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-yellow-500 to-amber-400 h-2.5 rounded-full transition-all duration-300"
-                      style={{ width: `${(countingState.count / countingState.limit) * 100}%` }}
-                    ></div>
-                  </div>
+              <div className="space-y-3">
+                <p className="text-xs text-amber-300/80 italic font-mono leading-relaxed">{countingState.reason}</p>
+                <div className="flex justify-between items-end">
+                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Current Count</span>
+                  <span className="text-3xl font-extrabold text-amber-400 tracking-tighter font-mono">
+                    {countingState.count} <span className="text-xs font-semibold text-slate-500">/ {countingState.limit}</span>
+                  </span>
                 </div>
-              ) : (
-                <div className="text-slate-500 text-xs">
-                  Active in late endgame states when all Trey (pawns) are promoted or captured.
+                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-yellow-500 to-amber-400 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(countingState.count / countingState.limit) * 100}%` }}
+                  ></div>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </div>
 
         {/* Center: 8x8 Board Container */}
-        <div className="lg:col-span-6 flex flex-col items-center">
-          
-          {/* Main Wooden Board */}
-          <div className="relative w-full max-w-[500px] aspect-square rounded-xl overflow-hidden border-[12px] border-[#1d120a] shadow-[0_20px_50px_rgba(0,0,0,0.7)] bg-[#e6cb9f] p-1 select-none">
-            {/* Wooden Texture Grid overlay */}
+        <div className="lg:col-span-6 lg:sticky lg:top-4 self-start flex flex-col items-center lg:items-center justify-center w-full max-w-[850px] mx-auto order-1 lg:order-none">
+          {/* Coordinates Layout Wrapper */}
+          <div className="grid grid-cols-[auto_1fr_auto] grid-rows-[auto_1fr_auto] items-center w-full max-w-[min(100%,90vh)] aspect-square select-none">
+            {/* Top row */}
+            <div></div>
+            <div className="grid grid-cols-8 text-center text-[10px] md:text-xs text-amber-500/70 font-bold font-mono pb-1.5 select-none rotate-180">
+              {playerColor === 'w' ? (
+                <><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></>
+              ) : (
+                <><span>H</span><span>G</span><span>F</span><span>E</span><span>D</span><span>C</span><span>B</span><span>A</span></>
+              )}
+            </div>
+            <div></div>
+
+            {/* Middle row */}
+            <div className="flex flex-col justify-around h-full text-[10px] md:text-xs text-amber-500/70 font-bold font-mono text-right pr-2 select-none py-2">
+              {playerColor === 'w' ? (
+                <><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></>
+              ) : (
+                <><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></>
+              )}
+            </div>
+            
+            {/* Main Wooden Board */}
+            {(() => {
+              const isWhiteKingInCheck = board && board.length > 0 ? isKingInCheck(board, 'w') : false;
+              const isBlackKingInCheck = board && board.length > 0 ? isKingInCheck(board, 'b') : false;
+              
+              return (
+                <div className="relative w-full h-full aspect-square rounded-xl overflow-hidden border-[12px] border-[#1d120a] shadow-[0_20px_50px_rgba(0,0,0,0.7)] bg-[#e6cb9f] p-1 select-none">
+                  {/* Wooden Texture Grid overlay */}
             <div className="absolute inset-0 bg-cover bg-center opacity-[0.15] mix-blend-multiply pointer-events-none" 
                  style={{ backgroundImage: 'radial-gradient(circle, #ffe3bd 0%, #d8b888 100%)' }}>
             </div>
             
-            <div className="relative w-full h-full grid grid-cols-8 grid-rows-8 gap-[1.5px] bg-[#1d120a] overflow-hidden">
+            <div className={`relative w-full h-full grid grid-cols-8 grid-rows-8 gap-[1.5px] bg-[#1d120a] overflow-hidden transition-transform duration-500 ${playerColor === 'b' ? 'rotate-180' : ''}`}>
               {board.map((row, r) => 
                 row.map((piece, c) => {
                   const selected = isSquareSelected(r, c);
+                  const isCheckedKing = piece && piece.type === 'sdaach' && (
+                    (piece.color === 'w' && isWhiteKingInCheck) ||
+                    (piece.color === 'b' && isBlackKingInCheck)
+                  );
                   const highlighted = isSquareHighlighted(r, c);
                   const isLastMove = isLastMoveSquare(r, c);
                   const coachHighlighted = isSquareCoachSuggested(r, c);
@@ -738,8 +1389,10 @@ export default function Home() {
                       key={`${r}-${c}`}
                       onClick={() => handleSquareClick(r, c)}
                       className={`relative flex items-center justify-center cursor-pointer transition-colors duration-200 bg-[#e6cb9f] hover:bg-[#dfc295]
+                        ${playerColor === 'b' ? 'rotate-180' : ''}
                         ${selected ? 'bg-[#cdaf82]/80 ring-4 ring-[#5c3a21] ring-inset' : ''}
-                        ${coachHighlighted && !selected ? 'ring-4 ring-amber-400/60 ring-inset shadow-[0_0_15px_rgba(251,191,36,0.3)]' : ''}
+                        ${isCheckedKing ? 'bg-red-800/40 ring-4 ring-red-500 ring-inset shadow-[0_0_20px_rgba(239,68,68,0.7)] animate-pulse z-30' : ''}
+                        ${coachHighlighted && !selected && !isCheckedKing ? 'ring-4 ring-amber-400/60 ring-inset shadow-[0_0_15px_rgba(251,191,36,0.3)]' : ''}
                         ${isLastMove ? 'after:absolute after:inset-0 after:border-2 after:border-[#5c3a21]/50' : ''}
                         ${isGuideFrom && !selected ? 'academy-from-square' : ''}
                         ${isGuideTo && !isEatTarget ? 'academy-to-square' : ''}
@@ -779,7 +1432,7 @@ export default function Home() {
                         } ${
                           piece.color === turn ? 'hover:scale-105 active:scale-95' : ''
                         }`}>
-                          <PieceIcon type={piece.type} color={piece.color} />
+                          <PieceIcon type={piece.type} color={piece.color} theme={pieceTheme} />
                         </div>
                       )}
                     </div>
@@ -834,116 +1487,80 @@ export default function Home() {
                 );
               })()}
             </div>
-          </div>
-          
-          {/* Coordinates Guide */}
-          <div className="flex w-full max-w-[500px] justify-between px-6 text-xs text-amber-500/70 font-bold font-mono mt-2">
-            <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
-          </div>
+                </div>
+              );
+            })()}
 
-          {/* Academy legend */}
-          {academyActive && academyGuide && !chapterSuccess && (
-            <div className="flex gap-3 mt-3 text-xs font-semibold flex-wrap justify-center">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]"></div>
-                <span className="text-amber-300">ដើម (FROM)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"></div>
-                <span className="text-emerald-300">ទិសដៅ (TO)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-400 shadow-[0_0_6px_rgba(239,68,68,0.8)]"></div>
-                <span className="text-red-300">ស៊ី (CAPTURE)</span>
-              </div>
+            <div className="flex flex-col justify-around h-full text-[10px] md:text-xs text-amber-500/70 font-bold font-mono text-left pl-2 select-none py-2 rotate-180">
+              {playerColor === 'w' ? (
+                <><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></>
+              ) : (
+                <><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></>
+              )}
             </div>
-          )}
+
+            {/* Bottom row */}
+            <div></div>
+            <div className="grid grid-cols-8 text-center text-[10px] md:text-xs text-amber-500/70 font-bold font-mono pt-1.5 select-none">
+              {playerColor === 'w' ? (
+                <><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></>
+              ) : (
+                <><span>H</span><span>G</span><span>F</span><span>E</span><span>D</span><span>C</span><span>B</span><span>A</span></>
+              )}
+            </div>
+            <div></div>
+          </div>
         </div>
-
-
-        {/* Right side tab interface for Play controls & Academy Academy */}
-        <div className="lg:col-span-3 flex flex-col gap-4">
+        
+            {/* Right Side Panels - Stacked */}
+            <div className="lg:col-span-3 flex flex-col gap-5 order-3 lg:order-none w-full">
           
-          {/* Tab Selector */}
-          <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
+          {/* Sidebar Header with Menu button and Title */}
+          <div className="flex items-center justify-between border-b border-slate-850 pb-4 mb-2 select-none">
+            <div>
+              <h1 className="text-2xl font-bold tracking-wider bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent drop-shadow-md">
+                {activeTab === 'academy' ? 'សាលាបណ្តុះបណ្តាលអុកចត្រង្គ' : 'អុកចត្រង្គ'}
+              </h1>
+              <p className={`text-[9px] font-semibold tracking-wider mt-0.5 uppercase transition-colors duration-500 ${
+                activeTab === 'academy' ? 'text-emerald-400' : 'text-amber-500/80'
+              }`}>
+                {activeTab === 'academy' ? 'Chess Academy' : 'OUK CHATRANG • Cambodian Traditional Chess'}
+              </p>
+            </div>
+            
             <button 
-              onClick={() => { setActiveTab('play'); setAcademyActive(false); }}
-              className={`py-2 text-xs font-black tracking-wider uppercase rounded-xl transition-all ${
-                activeTab === 'play' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-              }`}
+              onClick={() => setGameStarted(false)}
+              className="px-3 py-1.5 bg-slate-800/85 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg font-bold text-xs transition-all border border-slate-700 flex items-center gap-1.5 cursor-pointer"
             >
-              Play Match
-            </button>
-            <button 
-              onClick={() => setActiveTab('academy')}
-              className={`py-2 text-xs font-black tracking-wider uppercase rounded-xl transition-all ${
-                activeTab === 'academy' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Academy 🎓
+              <span className="text-sm">←</span> Menu
             </button>
           </div>
 
           {/* TAB 1: Playing options */}
           {activeTab === 'play' && (
             <>
-              {/* Controls Panel */}
-              <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-5 shadow-2xl backdrop-blur-md">
-                <h2 className="text-lg font-bold text-amber-400 border-b border-amber-500/20 pb-2 mb-4">Setup Controls</h2>
+              {/* Match Info Panel */}
+              <div className="bg-slate-950/80 border border-amber-500/20 rounded-2xl p-4 shadow-xl backdrop-blur-md">
+                <h2 className="text-xs font-bold text-amber-400 border-b border-amber-500/10 pb-1.5 mb-2.5 uppercase tracking-wider">Match Info</h2>
                 
-                <div className="space-y-4">
-                  {/* Opponent Selection Toggle */}
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Opponent Type</label>
-                    <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                      <button 
-                        onClick={() => setVsAI(false)}
-                        className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
-                          !vsAI ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        2 Players
-                      </button>
-                      <button 
-                        onClick={() => setVsAI(true)}
-                        className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
-                          vsAI ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        AI Opponent
-                      </button>
-                    </div>
+                <div className="space-y-2.5 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">Opponent:</span>
+                    <span className="font-bold text-slate-200">
+                      {vsAI ? (aiDifficulty === 'engine' ? 'AI (Fairy-Stockfish)' : 'AI (Local)') : '2 Players (Local)'}
+                    </span>
                   </div>
-
-                  {/* AI Strength */}
-                  {vsAI && (
-                    <div>
-                      <label className="text-xs text-slate-400 block mb-1">AI Difficulty</label>
-                      <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                        <button 
-                          onClick={() => setAiDifficulty('easy')}
-                          className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
-                            aiDifficulty === 'easy' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-                          }`}
-                        >
-                          Local Engine
-                        </button>
-                        <button 
-                          onClick={() => setAiDifficulty('engine')}
-                          className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
-                            aiDifficulty === 'engine' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-                          }`}
-                        >
-                          Fairy-Stockfish
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">Time Limit:</span>
+                    <span className="font-bold text-slate-200">
+                      {timeLimit ? `${timeLimit / 60} min` : 'Unlimited (∞)'}
+                    </span>
+                  </div>
 
                   {/* Reset Game Action */}
                   <button 
                     onClick={resetGame}
-                    className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-sm transition-all duration-300 shadow-[0_0_15px_rgba(217,119,6,0.2)]"
+                    className="w-full mt-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold py-1.5 px-3 rounded-lg text-xs transition-all duration-300 shadow-[0_0_10px_rgba(217,119,6,0.15)] cursor-pointer"
                   >
                     Reset / New Game
                   </button>
@@ -957,7 +1574,8 @@ export default function Home() {
                   <span className="text-xs font-mono text-slate-500">{history.length} moves</span>
                 </h2>
                 <div className="flex-1 overflow-y-auto pr-1 text-slate-300 text-xs font-mono space-y-1">
-                  {history.map((m, i) => {
+                  {[...history].reverse().map((m, revIndex) => {
+                    const i = history.length - 1 - revIndex;
                     const turnNum = Math.floor(i / 2) + 1;
                     const isWhite = i % 2 === 0;
                     const pieceName = m.piece.type.replace('_', ' ').toUpperCase();
@@ -966,7 +1584,7 @@ export default function Home() {
                       <div key={i} className={`p-1.5 rounded ${isWhite ? 'bg-slate-900/40' : 'bg-slate-800/20'}`}>
                         <span className="text-amber-500/70 mr-2">{turnNum}.</span>
                         <span className={isWhite ? 'text-amber-300' : 'text-slate-200'}>
-                          {isWhite ? 'Gold' : 'Silver'} {pieceName}: {toAlgebraic(m.from)} → {toAlgebraic(m.to)}
+                          {isWhite ? 'White' : 'Black'} {pieceName}: {toAlgebraic(m.from)} → {toAlgebraic(m.to)}
                           {m.captured && <span className="text-red-400 ml-1">x {m.captured.type}</span>}
                         </span>
                       </div>
@@ -1120,10 +1738,10 @@ export default function Home() {
               )}
             </div>
           )}
-
         </div>
-
       </div>
+      )
+      )}
     </div>
   );
 }

@@ -115,3 +115,47 @@ body {
 .guide-arrow-float {
   animation: float-bounce 2s ease-in-out infinite 0.6s;
 }
+
+/* ============================================
+   Premium Sleek Scrollbars
+   ============================================ */
+
+/* Firefox custom scrollbar support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 158, 11, 0.4) rgba(15, 23, 42, 0.3);
+}
+
+/* WebKit browsers (Chrome, Safari, Edge, Opera) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.4);
+  border-radius: 9999px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.75);
+}
+
+/* Ensure hand/pointer cursor on hover for buttons and interactive controls */
+button,
+[role="button"],
+select,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+

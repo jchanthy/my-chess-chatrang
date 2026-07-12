@@ -51,8 +51,8 @@ export function createInitialBoard(): Board {
   board[0][0] = { type: 'touk', color: 'b', hasMoved: false };
   board[0][1] = { type: 'sesh', color: 'b', hasMoved: false };
   board[0][2] = { type: 'koul', color: 'b', hasMoved: false };
-  board[0][3] = { type: 'sdaach', color: 'b', hasMoved: false }; // Black King starts on d8
-  board[0][4] = { type: 'neang', color: 'b', hasMoved: false };  // Black Queen starts on e8
+  board[0][3] = { type: 'neang', color: 'b', hasMoved: false };  // Black Queen starts on d8
+  board[0][4] = { type: 'sdaach', color: 'b', hasMoved: false }; // Black King starts on e8
   board[0][5] = { type: 'koul', color: 'b', hasMoved: false };
   board[0][6] = { type: 'sesh', color: 'b', hasMoved: false };
   board[0][7] = { type: 'touk', color: 'b', hasMoved: false };
@@ -71,8 +71,8 @@ export function createInitialBoard(): Board {
   board[7][0] = { type: 'touk', color: 'w', hasMoved: false };
   board[7][1] = { type: 'sesh', color: 'w', hasMoved: false };
   board[7][2] = { type: 'koul', color: 'w', hasMoved: false };
-  board[7][3] = { type: 'neang', color: 'w', hasMoved: false };  // White Queen starts on d1
-  board[7][4] = { type: 'sdaach', color: 'w', hasMoved: false }; // White King starts on e1
+  board[7][3] = { type: 'sdaach', color: 'w', hasMoved: false }; // White King starts on d1
+  board[7][4] = { type: 'neang', color: 'w', hasMoved: false };  // White Queen starts on e1
   board[7][5] = { type: 'koul', color: 'w', hasMoved: false };
   board[7][6] = { type: 'sesh', color: 'w', hasMoved: false };
   board[7][7] = { type: 'touk', color: 'w', hasMoved: false };
@@ -505,6 +505,18 @@ export function countTotalPieces(board: Board): number {
   }
   return count;
 }
+
+// Counts pieces belonging to a specific color
+export function countColorPieces(board: Board, color: PieceColor): number {
+  let count = 0;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (board[r][c]?.color === color) count++;
+    }
+  }
+  return count;
+}
+
 
 // Evaluate board for Minimax. Positive is good for White, Negative is good for Black.
 export function evaluateBoard(board: Board): number {
