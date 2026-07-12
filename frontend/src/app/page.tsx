@@ -115,19 +115,7 @@ export default function Home() {
         return "អបអរសាទរ! បងបានសាកល្បងគ្រប់គ្រាន់ហើយ! ចុច 'មេរៀនបន្ទាប់' ដើម្បីបញ្ចប់ការសិក្សា! 🏆";
       },
       setup: () => {
-        const b: Board = Array(8).fill(null).map(() => Array(8).fill(null));
-        // Put one of each piece type on the board for White (row 7)
-        b[7][3] = { type: 'sdaach', color: 'w', hasMoved: false }; // King on d1
-        b[7][4] = { type: 'neang', color: 'w', hasMoved: false };  // Queen on e1
-        b[7][2] = { type: 'koul', color: 'w', hasMoved: false };   // Bishop on c1
-        b[7][1] = { type: 'sesh', color: 'w', hasMoved: false };    // Knight on b1
-        b[7][0] = { type: 'touk', color: 'w', hasMoved: false };    // Rook on a1
-        b[5][4] = { type: 'trey', color: 'w', hasMoved: false };    // Trey (Pawn) on e3
-        
-        // Put some black pieces to explore captures
-        b[0][3] = { type: 'sdaach', color: 'b', hasMoved: false };
-        b[4][3] = { type: 'trey', color: 'b', hasMoved: false }; // Black Trey on d4
-        return b;
+        return createInitialBoard();
       },
       checkComplete: (currentBoard, move, history) => {
         return history.length >= 3;
