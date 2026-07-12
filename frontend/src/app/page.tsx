@@ -1421,13 +1421,59 @@ export default function Home() {
                 </button>
               </div>
 
+              {/* Piece Info Card - pinned at top, shown when a piece is clicked */}
+              {activeGuidePiece && (() => {
+                const guideDataTop: Record<string, { khmer: string, title: string, move: string, capture: string, special: string, alert?: string }> = {
+                  sdaach: { khmer: 'ស្តេច (Sdaach)', title: 'The King', move: 'Moves 1 square in any direction (8 squares possible).', capture: 'Captures by moving onto any adjacent enemy square. Cannot capture into check.', special: 'On its very first move only (not in check), it can leap like a Knight.', alert: 'Can NEVER step onto a square attacked by an enemy.' },
+                  neang: { khmer: 'នាង (Neang)', title: 'The Queen', move: 'Moves 1 square diagonally in any of 4 directions.', capture: 'Captures by stepping diagonally onto an enemy square (adjacent only).', special: 'First move only: can leap 2 squares straight forward.', alert: 'Does NOT sweep across the board like Western chess Queen.' },
+                  koul: { khmer: 'គោល (Koul)', title: 'The Bishop', move: 'Moves 1 square diagonally (4 dirs) OR 1 square straight forward — 5 directions total.', capture: 'Captures on any of its 5 movement directions (4 diagonals + 1 forward).', special: 'The forward-move option makes it stronger than a Western Bishop.' },
+                  sesh: { khmer: 'សេះ (Sesh)', title: 'The Knight', move: 'L-shape: 2 squares one direction + 1 square perpendicular (8 landing squares).', capture: 'Lands directly on an enemy piece — jumps over everything in between.', special: 'Only piece that can jump over other pieces.' },
+                  touk: { khmer: 'ទូក (Touk)', title: 'The Rook', move: 'Slides any number of squares vertically or horizontally (path must be clear).', capture: 'Captures the first enemy piece along its rank or file. Cannot jump over pieces.', special: 'Most powerful piece for endgame control.' },
+                  trey: { khmer: 'ត្រី (Trey)', title: 'The Pawn', move: 'Moves 1 square straight forward only. No 2-square push.', capture: 'Captures 1 square diagonally forward only. Cannot capture straight ahead.', special: 'Promotes to Trey Kaet (Queen-like) when reaching opponent pawn starting rank.' },
+                  trey_kaet: { khmer: 'ត្រីកើត (Trey Kaet)', title: 'Promoted Pawn', move: 'Moves like the Queen — 1 square diagonally in any of 4 directions.', capture: 'Captures diagonally onto adjacent enemy squares.', special: 'Automatically becomes Trey Kaet upon reaching the promotion rank.' }
+                };
+                const d = guideDataTop[activeGuidePiece];
+                if (!d) return null;
+                return (
+                  <div className="bg-slate-900 border border-amber-500/40 rounded-xl p-3 space-y-2 shadow-lg shadow-amber-500/5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 flex-shrink-0">
+                        <PieceIcon type={activeGuidePiece as any} color="w" theme={pieceTheme} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-amber-400 font-black text-sm leading-tight">{d.khmer}</div>
+                        <div className="text-slate-400 text-[10px]">{d.title}</div>
+                      </div>
+                      <button type="button" onClick={() => setActiveGuidePiece(null)} className="text-slate-500 hover:text-white font-black px-1.5 py-0.5 rounded hover:bg-slate-800 transition-all text-xs">✕</button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-1.5 text-[11px] font-sans">
+                      <div className="bg-slate-800/60 px-2.5 py-1.5 rounded-lg">
+                        <span className="text-amber-400 font-black text-[9px] uppercase tracking-widest">♟ Move — </span>
+                        <span className="text-slate-200">{d.move}</span>
+                      </div>
+                      <div className="bg-rose-950/40 border border-rose-500/20 px-2.5 py-1.5 rounded-lg">
+                        <span className="text-rose-400 font-black text-[9px] uppercase tracking-widest">⚔ Capture — </span>
+                        <span className="text-slate-200">{d.capture}</span>
+                      </div>
+                      <div className="bg-emerald-950/40 border border-emerald-500/20 px-2.5 py-1.5 rounded-lg">
+                        <span className="text-emerald-400 font-black text-[9px] uppercase tracking-widest">★ Special — </span>
+                        <span className="text-slate-200">{d.special}</span>
+                      </div>
+                      {d.alert && <div className="bg-red-950/30 border border-red-500/30 text-red-300 px-2.5 py-1.5 rounded-lg text-[10px] italic">⚠️ {d.alert}</div>}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Lesson Instructions & Steps List */}
-              <div className="space-y-4 flex-grow overflow-y-auto pr-1">
-                <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-850/80 space-y-1.5">
+              <div className="space-y-3 flex-grow overflow-y-auto pr-1">
+                <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-850/80">
                   <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">🎯 Lesson Goal</h3>
-                  <p className="text-xs text-slate-300 leading-relaxed font-sans whitespace-pre-line">
-                    {tutorialChapters[currentChapterIndex].description}
-                  </p>
+                  {!activeGuidePiece && (
+                    <p className="text-xs text-slate-300 leading-relaxed font-sans whitespace-pre-line mt-1">
+                      {tutorialChapters[currentChapterIndex].description}
+                    </p>
+                  )}
                 </div>
 
                 {/* Steps Checklist */}
@@ -1492,14 +1538,12 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* Chess Key & Special Move Explanations */}
-                <div className="border-t border-slate-900 pt-3.5 space-y-2 select-none">
+                {/* Piece Icon Quick-Select Bar */}
+                <div className="border-t border-slate-900 pt-2 space-y-1.5 select-none">
                   <h3 className="text-[10px] font-bold text-amber-400 uppercase tracking-wider pl-1 flex items-center justify-between">
-                    <span>📖 Piece Movement Guide</span>
-                    <span className="text-[8px] text-slate-500 font-medium">Click icon to learn rules</span>
+                    <span>📖 Piece Guide</span>
+                    <span className="text-[8px] text-slate-500 font-medium">Click a piece on the board or here</span>
                   </h3>
-                  
-                  {/* Grid of Piece Icons */}
                   <div className="grid grid-cols-6 gap-1 bg-slate-900/60 p-1 rounded-xl border border-slate-850">
                     {[
                       { type: 'sdaach', label: 'King' },
@@ -1514,126 +1558,16 @@ export default function Home() {
                         type="button"
                         onClick={() => setActiveGuidePiece(activeGuidePiece === p.type ? null : (p.type as any))}
                         className={`flex flex-col items-center justify-center p-1 rounded-lg border transition-all cursor-pointer ${
-                          activeGuidePiece === p.type 
-                            ? 'bg-amber-400/20 border-amber-400 shadow-md' 
+                          activeGuidePiece === p.type
+                            ? 'bg-amber-400/20 border-amber-400 shadow-md'
                             : 'bg-slate-950/40 border-slate-800 hover:bg-slate-800/40 hover:border-slate-700'
                         }`}
                       >
-                        <div className="w-6 h-6">
-                          <PieceIcon type={p.type as any} color="w" theme={pieceTheme} />
-                        </div>
-                        <span className="text-[8px] font-bold text-slate-400 mt-1">{p.label}</span>
+                        <div className="w-6 h-6"><PieceIcon type={p.type as any} color="w" theme={pieceTheme} /></div>
+                        <span className="text-[8px] font-bold text-slate-400 mt-0.5">{p.label}</span>
                       </button>
                     ))}
                   </div>
-
-                  {/* Active Explanation Card */}
-                  {activeGuidePiece && (() => {
-                    const guideData: Record<string, { khmer: string, title: string, move: string, capture: string, special: string, alert?: string }> = {
-                      sdaach: {
-                        khmer: 'ស្តេច (Sdaach)',
-                        title: 'The King',
-                        move: 'Moves 1 square in any direction — vertically, horizontally, or diagonally (8 possible squares).',
-                        capture: 'Captures by moving onto any adjacent enemy square (same 1-square rule). Cannot capture a piece that would leave the King in check.',
-                        special: 'On its very first move only (and not while in check), it can leap like a Knight — 2 squares in one direction and 1 square to the side.',
-                        alert: 'The King can NEVER step onto a square attacked by an enemy piece. It cannot use the Knight-leap to escape an active check.'
-                      },
-                      neang: {
-                        khmer: 'នាង (Neang)',
-                        title: 'The Queen',
-                        move: 'Moves 1 square diagonally in any of 4 directions.',
-                        capture: 'Captures by stepping diagonally onto an enemy square. Short range — it can only capture adjacent diagonal pieces.',
-                        special: 'On its very first move only, it can leap 2 squares straight forward to land on or jump over a friendly piece (cannot capture on the leap).',
-                        alert: 'Unlike Western chess, the Ouk Queen does NOT sweep across the board. It is a short-range piece.'
-                      },
-                      koul: {
-                        khmer: 'គោល (Koul)',
-                        title: 'The Bishop',
-                        move: 'Moves 1 square diagonally in any of 4 directions, OR 1 square straight forward — 5 directions total.',
-                        capture: 'Captures by landing on an adjacent enemy square in any of its 5 movement directions (4 diagonals + 1 forward).',
-                        special: 'The forward-move option makes the Bishop stronger than its Western counterpart for pushing through pawn chains.'
-                      },
-                      sesh: {
-                        khmer: 'សេះ (Sesh)',
-                        title: 'The Knight',
-                        move: 'Moves in an L-shape: 2 squares in one direction then 1 square perpendicular — exactly 8 possible landing squares.',
-                        capture: 'Captures by landing its L-move directly on an enemy piece. It jumps over any pieces in between — they do not block it.',
-                        special: 'The only piece that can jump over other pieces. Very powerful in the opening for establishing the Horn Defense formation.'
-                      },
-                      touk: {
-                        khmer: 'ទូក (Touk)',
-                        title: 'The Rook',
-                        move: 'Slides any number of squares vertically or horizontally, as long as the path is clear.',
-                        capture: 'Captures the first enemy piece it encounters along its rank or file. It cannot jump over pieces — blocked by any piece in its path.',
-                        special: 'The most powerful piece for endgame dominance. Controls entire ranks and files at once.'
-                      },
-                      trey: {
-                        khmer: 'ត្រី (Trey)',
-                        title: 'The Pawn',
-                        move: 'Moves 1 square straight forward only. Cannot move 2 squares on its first move (unlike Western chess).',
-                        capture: 'Captures 1 square diagonally forward (left-forward or right-forward). It CANNOT capture straight ahead.',
-                        special: 'Promotes to Trey Kaet (ត្រីកើត) when it reaches the opponent\'s pawn starting rank (row 6 for White). Trey Kaet moves just like the Queen.'
-                      },
-                      trey_kaet: {
-                        khmer: 'ត្រីកើត (Trey Kaet)',
-                        title: 'Promoted Pawn',
-                        move: 'Moves exactly like the Queen (Neang) — 1 square diagonally in any of 4 directions.',
-                        capture: 'Captures by stepping diagonally onto an adjacent enemy square — same as the Queen.',
-                        special: 'A Trey that reaches the opponent\'s starting pawn rank automatically becomes Trey Kaet for the rest of the game.'
-                      }
-                    };
-
-                    const data = guideData[activeGuidePiece];
-                    if (!data) return null;
-
-                    return (
-                      <div className="bg-slate-900 border border-amber-500/30 rounded-xl p-3.5 space-y-2 animate-fadeIn text-xs leading-relaxed">
-                        {/* Header: icon + name */}
-                        <div className="flex items-center gap-2.5 border-b border-slate-800 pb-2">
-                          <div className="w-8 h-8 flex-shrink-0">
-                            <PieceIcon type={activeGuidePiece as any} color="w" theme={pieceTheme} />
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-amber-400 font-black text-sm leading-tight">{data.khmer}</div>
-                            <div className="text-slate-400 text-[10px]">{data.title}</div>
-                          </div>
-                          <button 
-                            type="button"
-                            onClick={() => setActiveGuidePiece(null)} 
-                            className="text-[10px] text-slate-500 hover:text-white font-black px-1.5 py-0.5 rounded hover:bg-slate-800 transition-all"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        
-                        <div className="space-y-2 text-slate-300 font-sans">
-                          {/* Movement */}
-                          <div className="bg-slate-800/50 p-2 rounded-lg">
-                            <span className="text-amber-400 font-black text-[9px] uppercase tracking-widest flex items-center gap-1 mb-1">♟ Movement</span>
-                            <p className="text-slate-200 text-[11px] leading-snug">{data.move}</p>
-                          </div>
-                          
-                          {/* Capture Rule */}
-                          <div className="bg-rose-950/30 border border-rose-500/20 p-2 rounded-lg">
-                            <span className="text-rose-400 font-black text-[9px] uppercase tracking-widest flex items-center gap-1 mb-1">⚔ How it Captures</span>
-                            <p className="text-slate-200 text-[11px] leading-snug">{data.capture}</p>
-                          </div>
-
-                          {/* Special Rule */}
-                          <div className="bg-emerald-950/30 border border-emerald-500/20 p-2 rounded-lg">
-                            <span className="text-emerald-400 font-black text-[9px] uppercase tracking-widest flex items-center gap-1 mb-1">★ Special Skill</span>
-                            <p className="text-slate-200 text-[11px] leading-snug">{data.special}</p>
-                          </div>
-
-                          {data.alert && (
-                            <div className="bg-red-950/30 border border-red-500/30 text-red-300 p-2 rounded-lg text-[10px] italic leading-relaxed">
-                              ⚠️ {data.alert}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
                 </div>
               </div>
             </div>
